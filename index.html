@@ -24,12 +24,12 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
 .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards; justify-content:flex-start;}
 .msg.me {background: rgba(255,20,147,0.1);}
 .msg .meta{font-weight:700;font-size:14px;}  
-.msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}  
+.msg .content{font-size:12px;color:#fff;white-space:pre-wrap;font-weight:400;}  
 .send-area{display:none;align-items:center;gap:6px;background:var(--card);padding:6px 12px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:20px;}
-.send-area input{flex:1;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;transition:0.2s all;font-weight:700;}
+.send-area input{flex:1;padding:12px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;transition:0.2s all;}
 .send-area input::placeholder{color:var(--muted);}
 .send-area input:focus{border-color:var(--neon);box-shadow:0 0 10px rgba(255,20,147,0.5);}
-.send-area button.btn{padding:8px 14px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;transition:0.2s all;}
+.send-area button.btn{padding:10px 18px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;transition:0.2s all;}
 .send-area button.btn:hover{filter:brightness(1.1);}
 .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
 .profile .small{font-size:12px;color:var(--muted);}
@@ -38,6 +38,7 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
 #guestIdInput:focus{border-color:var(--neon);box-shadow:0 0 10px rgba(255,20,147,0.5);}
 #guestNameLabel{margin-bottom:8px;font-weight:700;color:#fff;font-size:16px;}
 .google-login-btn{display:block;margin:6px auto;padding:8px 14px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;}
+.redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
 @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
@@ -56,7 +57,7 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
       <button id="googleSignInBtn" class="google-login-btn">Sign in with Google</button>
     </div>
 
-    <!-- Chat ID selection after login -->
+    <!-- Chat ID selection after chat loads -->
     <div id="chatIdPanel">
       <div id="guestNameLabel">Guest 0000</div>
       <input type="text" id="guestIdInput" placeholder="Choose your Chat ID" />
@@ -79,6 +80,7 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
         <div class="small">Cash: ₦<span id="cashAmount">0</span></div>
         <div class="small">UID: <span id="uid">—</span></div>
       </div>
+      <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
     </div>
   </div>
 </div>
@@ -86,7 +88,7 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot, addDoc, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = { apiKey:"AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao", authDomain:"metaverse-1010.firebaseapp.com", projectId:"metaverse-1010"};
 const app = initializeApp(firebaseConfig);
@@ -104,8 +106,8 @@ document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
   try{
     await signInWithPopup(auth,provider);
     document.getElementById("guestSignIn").style.display="none";
-    document.getElementById("chatIdPanel").style.display="block";
-    document.getElementById("guestNameLabel").innerText = generateGuestName();
+    document.getElementById("messages").style.display="flex";
+    document.getElementById("sendArea").style.display="flex";
   }catch(err){console.error(err);alert("Google sign-in failed. Try again.");}
 });
 
@@ -128,21 +130,52 @@ onAuthStateChanged(auth, async user=>{
   if(user){
     const userRef = doc(db,"users",user.uid);
     const docSnap = await getDoc(userRef);
-    if(!docSnap.exists()) return;
-    currentUser = {uid:user.uid,...docSnap.data()};
-    document.getElementById("chatIdPanel").style.display="none";
-    document.getElementById("messages").style.display="flex";
-    document.getElementById("sendArea").style.display="flex";
-    document.getElementById("profileSection").style.display="flex";
-    document.getElementById("profileName").innerText = currentUser.chatId;
-    document.getElementById("uid").innerText = currentUser.uid;
+    if(!docSnap.exists()){document.getElementById("chatIdPanel").style.display="block";}
+    const userData = (await getDoc(userRef)).data();
+    currentUser={uid:user.uid,...userData};
 
-    // Live stars & cash
-    onSnapshot(userRef, snap=>{
+    document.getElementById("profileSection").style.display="flex";
+    document.getElementById("profileName").innerText=currentUser.chatId || generateGuestName();
+    document.getElementById("uid").innerText=currentUser.uid;
+    document.getElementById("redeemBtn").style.display="inline-block";
+
+    onSnapshot(userRef,snap=>{
       const d = snap.data();
       document.getElementById("starCount").innerText = d.stars;
       document.getElementById("cashAmount").innerText = d.cash || 0;
     });
+
+    // Load chat messages
+    const messagesRef = collection(db,"messages");
+    const q = query(messagesRef,orderBy("timestamp"));
+    onSnapshot(q,snap=>{
+      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML="";
+      snap.forEach(doc=>{
+        const m=doc.data();
+        const div=document.createElement("div");
+        div.classList.add("msg");
+        if(m.uid===currentUser.uid) div.classList.add("me");
+        div.innerHTML=`<span class="meta">${m.chatId}:</span> <span class="content">${m.content}</span>`;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop=messagesDiv.scrollHeight;
+      });
+    });
+
+    // Enable send message
+    document.getElementById("sendBtn").addEventListener("click", async ()=>{
+      const msg=document.getElementById("messageInput").value.trim();
+      if(!msg) return;
+      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp()});
+      document.getElementById("messageInput").value="";
+    });
+
+  } else {
+    document.getElementById("messages").style.display="none";
+    document.getElementById("sendArea").style.display="none";
+    document.getElementById("profileSection").style.display="none";
+    document.getElementById("guestSignIn").style.display="block";
+    document.getElementById("chatIdPanel").style.display="none";
   }
 });
 </script>
