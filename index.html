@@ -10,7 +10,7 @@
   --bg:#000;
   --card:#111;
   --muted:#aaa;
-  --accent:#FF1493; /* deep pink */
+  --accent:#FF1493;
   --glass: rgba(255,255,255,0.03);
 }
 html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
@@ -52,33 +52,21 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
   background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);
   display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;
 }
+.floating-reward{
+  position:absolute;top:-20px;right:0;font-size:12px;color:var(--accent);animation:floatUp 1s forwards;
+}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-30px);}}
 .redeem-btn{
-  display:none; /* hidden until login */
-  background:var(--accent);color:#000;font-size:11px;
+  display:none; background:var(--accent);color:#000;font-size:11px;
   padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;
   margin-left:auto;text-decoration:none;
 }
 .admin-panel{
-  display:none;
-  margin-top:8px;
-  padding:6px;
-  background:#111;
-  border-radius:8px;
-  border:1px solid rgba(255,20,147,0.3);
+  display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);
 }
 .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
 .change-id-btn{background:var(--accent);color:#000;padding:4px 6px;margin-left:6px;border-radius:6px;font-size:11px;cursor:pointer;}
 @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
-@keyframes cashFlash {
-  0% { transform: scale(1); color: #fff; }
-  25% { transform: scale(1.2); color: #FF1493; }
-  50% { transform: scale(1.1); color: #fff; }
-  75% { transform: scale(1.15); color: #FF1493; }
-  100% { transform: scale(1); color: #fff; }
-}
-.cash-update {
-  animation: cashFlash 0.5s ease forwards;
-}
 @media (max-width:600px){
   .send-area{padding:6px 8px;}
   .send-area button.btn{padding:6px 12px;font-size:13px;}
@@ -128,7 +116,7 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
         <strong id="profileName">GUEST 0000</strong>
         <button class="change-id-btn" id="changeIdBtn" style="display:none">Change ID</button>
         <div class="small">Stars: <span id="starCount">0</span> ⭐</div>
-        <div class="small">CASH: ₦<span id="cashCount">0</span></div>
+        <div class="small">Cash: ₦<span id="cashCount">0</span></div>
         <div class="small">UID: <span id="uid">—</span></div>
       </div>
       <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
@@ -136,6 +124,7 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
     <!-- Admin panel -->
     <div class="admin-panel" id="adminPanel">
       <button id="giveStarAdmin">Give Star to Selected User</button>
+      <button id="giveCashAdmin">Give Cash</button>
       <button id="whitelistEmailAdmin">Whitelist Email</button>
       <button id="adminLogoutBtn">Logout</button>
     </div>
@@ -177,9 +166,7 @@ let currentUser = null;
 let userColors = {};
 
 // Guest random ID generator
-function generateGuestName(){
-  return "GUEST " + Math.floor(1000 + Math.random()*9000);
-}
+function generateGuestName(){ return "GUEST " + Math.floor(1000 + Math.random()*9000); }
 
 // Color per user
 function getColorForUser(chatId){
@@ -199,12 +186,10 @@ document.getElementById("signupBtn").addEventListener("click", async ()=>{
   const pass = document.getElementById("authPassword").value;
   const chatId = document.getElementById("authUsername").value.trim();
   if(!chatId||chatId.length<4) return alert("Chat ID must be at least 4 characters.");
-
   const usersRef = collection(db,"users");
   const chatQ = query(usersRef,where("chatId","==",chatId));
   const chatSnap = await getDocs(chatQ);
   if(!chatSnap.empty) return alert("Chat ID already exists.");
-
   const userCredential = await createUserWithEmailAndPassword(auth,email,pass);
   await setDoc(doc(db,"users",userCredential.user.uid),{
     chatId,email,stars:0,cash:0,isAdmin:email.toLowerCase()==="paygeda@gmail.com"
@@ -222,14 +207,10 @@ document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
   await signInWithPopup(auth,provider);
 });
 
-document.getElementById("signoutBtn").addEventListener("click", async ()=>{
-  await signOut(auth);
-});
+document.getElementById("signoutBtn").addEventListener("click", async ()=>{ await signOut(auth); });
+document.getElementById("adminLogoutBtn").addEventListener("click", async ()=>{ await signOut(auth); });
 
-document.getElementById("adminLogoutBtn").addEventListener("click", async ()=>{
-  await signOut(auth);
-});
-
+// Change chat ID
 document.getElementById("changeIdBtn").addEventListener("click", async ()=>{
   if(!currentUser) return;
   const newId = prompt("Enter new Chat ID:", currentUser.chatId);
@@ -263,23 +244,42 @@ document.getElementById("sendBtn").addEventListener("click", async ()=>{
   document.getElementById("messageInput").value="";
 });
 
-// Auth state change
-onAuthStateChanged(auth,async user=>{
-  const cashSpan = document.getElementById('cashCount');
-  let lastCash = 0;
+// Floating reward
+function showFloatingReward(text){
+  const profileDiv = document.querySelector(".profile");
+  const floatDiv = document.createElement("div");
+  floatDiv.className="floating-reward";
+  floatDiv.innerText=text;
+  profileDiv.appendChild(floatDiv);
+  setTimeout(()=>floatDiv.remove(),1000);
+}
 
+// Admin buttons
+document.getElementById("giveStarAdmin")?.addEventListener("click", async ()=>{
+  if(!currentUser) return;
+  const userRef = doc(db,"users",currentUser.uid);
+  await updateDoc(userRef,{stars:currentUser.stars+1});
+});
+
+document.getElementById("giveCashAdmin")?.addEventListener("click", async ()=>{
+  if(!currentUser) return;
+  const userRef = doc(db,"users",currentUser.uid);
+  const increment = 500; // ₦500 test
+  await updateDoc(userRef,{cash:currentUser.cash+increment});
+});
+
+// Auth state
+onAuthStateChanged(auth,async user=>{
   if(user){
     const userRef = doc(db,"users",user.uid);
     const docSnap = await getDoc(userRef);
     if(!docSnap.exists()){
-      // For Google signup, assign chatId
       const chatId = generateGuestName();
       await setDoc(userRef,{chatId,email:user.email,stars:0,cash:0,isAdmin:user.email==="paygeda@gmail.com"});
     }
-    
     const userData = (await getDoc(userRef)).data();
     currentUser = {uid:user.uid,...userData};
-    
+
     document.getElementById("authBox").style.display="none";
     document.getElementById("sendArea").style.display="flex";
     document.getElementById("redeemBtn").style.display="inline-block";
@@ -287,22 +287,25 @@ onAuthStateChanged(auth,async user=>{
     document.getElementById("uid").innerText=currentUser.uid;
     document.getElementById("changeIdBtn").style.display="inline-block";
     if(currentUser.isAdmin) document.getElementById("adminPanel").style.display="block";
-    
+
     // Live stars & cash
     onSnapshot(userRef,docSnap=>{
       const data = docSnap.data();
-      currentUser.stars = data.stars || 0;
-      currentUser.cash = data.cash || 0;
-      
-      document.getElementById("starCount").innerText = currentUser.stars;
-      
-      // Cash animation
-      const newCash = Number(currentUser.cash);
-      if(newCash !== lastCash){
-        cashSpan.textContent = newCash.toLocaleString();
-        cashSpan.classList.add('cash-update');
-        setTimeout(()=>cashSpan.classList.remove('cash-update'), 500);
-        lastCash = newCash;
+
+      // Stars
+      if(data.stars !== currentUser.stars){
+        const delta = data.stars - currentUser.stars;
+        currentUser.stars = data.stars;
+        document.getElementById("starCount").innerText=currentUser.stars;
+        if(delta>0) showFloatingReward(`+${delta} ⭐`);
+      }
+
+      // Cash
+      if(data.cash !== currentUser.cash){
+        const delta = data.cash - currentUser.cash;
+        currentUser.cash = data.cash;
+        document.getElementById("cashCount").innerText=currentUser.cash;
+        if(delta>0) showFloatingReward(`+₦${delta}`);
       }
     });
 
@@ -329,10 +332,8 @@ onAuthStateChanged(auth,async user=>{
     document.getElementById("redeemBtn").style.display="none";
     document.getElementById("changeIdBtn").style.display="none";
     document.getElementById("adminPanel").style.display="none";
-    document.getElementById("profileName").innerText=generateGuestName();
+    document.getElementById("profileName").innerText="GUEST 0000";
     document.getElementById("uid").innerText="—";
-    document.getElementById("starCount").innerText="0";
-    cashSpan.textContent = "0";
   }
 });
 </script>
