@@ -39,14 +39,6 @@
     .stats span{font-weight:400;color:#fff;font-family:monospace;font-size:13px;}
     /* NEW additions */
     .profile-card{background:var(--glass);padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
-    .badge{
-      background: none; /* removed pink backdrop */
-      color: #fff;      /* plain star color */
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 6px;
-      margin-left: 6px;
-    }
     .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
     .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
@@ -85,11 +77,10 @@
           <div>
             <strong id="profileName">GUEST 0000</strong>
             <div class="stats">STARS COLLECTED: 
-              <span id="starCount">0</span> 
-              <span class="badge">⭐</span>
+              <span id="starCount">0</span> ⭐
             </div>
             <div class="stats">CASH EARNED: 
-              <span id="cashCount">0</span> 
+              <span id="cashCount">₦0</span>
             </div>
           </div>
           <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
@@ -206,7 +197,7 @@
           currentUser.stars=d.stars||0;
           currentUser.cash=d.cash||0;
           document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
-          document.getElementById("cashCount").innerText=formatNumberWithCommas(currentUser.cash);
+          document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
         });
 
         // Auto-increment stars
@@ -244,7 +235,7 @@
         document.getElementById("profileBox").style.display="none";
         document.getElementById("profileName").innerText=generateGuestName();
         document.getElementById("starCount").innerText="0";
-        document.getElementById("cashCount").innerText="0";
+        document.getElementById("cashCount").innerText="₦0";
         guestGreetingEl.textContent = "";
         startGuestGreeting();
       }
