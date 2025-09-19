@@ -1,19 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Xixi — Money Talk 💸</title>
 <style>
 :root{
   --bg:#000;
   --card:#111;
   --muted:#aaa;
-  --accent:#FF1493; /* theme pink */
-  --neon:#FF1493;   /* neon pink for input focus */
+  --accent:#FF1493; /* neon theme pink */
+  --neon:#FF1493;
   --glass: rgba(255,255,255,0.03);
 }
-body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);height:100%;}
+body,html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);height:100%;}
 .app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;}
 .brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
 .room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
@@ -21,23 +21,21 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
 #videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;}
 #videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
 #messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;display:none;}
-.msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards; justify-content:flex-start;}
+.msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards; justify-content:flex-start; text-align:left;}
 .msg.me {background: rgba(255,20,147,0.1);}
 .msg .meta{font-weight:700;font-size:14px;}  
 .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;font-weight:400;}  
-.send-area{display:none;align-items:center;gap:6px;background:var(--card);padding:6px 12px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:20px;}
-.send-area input{flex:1;padding:12px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;transition:0.2s all;}
+.send-area{display:none;align-items:center;gap:6px;background:var(--card);padding:6px 12px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:20px;width:100%;}
+.send-area input{flex:1;padding:14px 18px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;transition:0.2s all;}
 .send-area input::placeholder{color:var(--muted);}
 .send-area input:focus{border-color:var(--neon);box-shadow:0 0 10px rgba(255,20,147,0.5);}
-.send-area button.btn{padding:10px 18px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;transition:0.2s all;}
+.send-area button.btn{padding:10px 20px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;transition:0.2s all;}
 .send-area button.btn:hover{filter:brightness(1.1);}
-.profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
-.profile .small{font-size:12px;color:var(--muted);}
-#chatIdPanel{display:none;background:#111;padding:12px;border-radius:12px;text-align:center;margin-top:12px;}
-#guestIdInput{padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);width:220px;text-align:center;font-weight:700;color:#fff;background:#111;transition:0.2s all;}
-#guestIdInput:focus{border-color:var(--neon);box-shadow:0 0 10px rgba(255,20,147,0.5);}
-#guestNameLabel{margin-bottom:8px;font-weight:700;color:#fff;font-size:16px;}
+#guestSignIn{text-align:center;margin-top:12px;}
+#guestNameLabel{margin-bottom:8px;font-weight:700;color:#fff;font-size:20px;}
 .google-login-btn{display:block;margin:6px auto;padding:8px 14px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;}
+#profileSection{display:none;flex-direction:column;gap:4px;margin-top:12px;}
+.profile .small{font-size:12px;color:var(--muted);}
 .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
 @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
 </style>
@@ -52,18 +50,13 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
       <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video" allowfullscreen></iframe>
     </div>
 
-    <!-- Google Sign-In first -->
-    <div id="guestSignIn" style="text-align:center;margin-top:12px;">
+    <!-- Guest greeting and Google Sign-In -->
+    <div id="guestSignIn">
+      <h2 id="guestNameLabel">Hi Guest 0000</h2>
       <button id="googleSignInBtn" class="google-login-btn">Sign in with Google</button>
     </div>
 
-    <!-- Chat ID selection after chat loads -->
-    <div id="chatIdPanel">
-      <div id="guestNameLabel">Guest 0000</div>
-      <input type="text" id="guestIdInput" placeholder="Choose your Chat ID" />
-      <button id="saveChatIdBtn" class="google-login-btn" style="margin-top:8px;">Set Chat ID</button>
-    </div>
-
+    <!-- Chat -->
     <div id="messages"></div>
     <div class="send-area" id="sendArea">
       <input type="text" id="messageInput" placeholder="Type your message..." />
@@ -75,7 +68,6 @@ body, html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div>
         <strong id="profileName">GUEST 0000</strong>
-        <button class="change-id-btn" id="changeIdBtn">Change ID</button>
         <div class="small">Stars: <span id="starCount">0</span> ⭐</div>
         <div class="small">Cash: ₦<span id="cashAmount">0</span></div>
         <div class="small">UID: <span id="uid">—</span></div>
@@ -95,34 +87,43 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUser = null;
+let userColors = {};
 
-function generateGuestName(){return "Guest "+Math.floor(1000+Math.random()*9000);}
-document.getElementById("guestNameLabel").innerText = generateGuestName();
+// Random guest name
+function generateGuestName(){
+  return "Guest "+Math.floor(1000+Math.random()*9000);
+}
+const guestLabel = document.getElementById("guestNameLabel");
+guestLabel.innerText = "Hi " + generateGuestName();
+
+// Random color per user session
+function getColorForUser(chatId){
+  if(!userColors[chatId]){
+    const colors = ["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
+    userColors[chatId] = colors[Math.floor(Math.random()*colors.length)];
+  }
+  return userColors[chatId];
+}
+
+// Persistence
 setPersistence(auth,browserLocalPersistence).catch(console.error);
 
-// Google Sign-In
+// Google sign-in
 document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
   const provider = new GoogleAuthProvider();
   try{
-    await signInWithPopup(auth,provider);
+    const userCredential = await signInWithPopup(auth,provider);
     document.getElementById("guestSignIn").style.display="none";
     document.getElementById("messages").style.display="flex";
     document.getElementById("sendArea").style.display="flex";
-  }catch(err){console.error(err);alert("Google sign-in failed. Try again.");}
-});
 
-// Save Chat ID
-document.getElementById("saveChatIdBtn").addEventListener("click", async ()=>{
-  const chatId = document.getElementById("guestIdInput").value.trim();
-  if(!chatId || chatId.length<4) return alert("Chat ID must be at least 4 characters");
-  const usersRef = collection(db,"users");
-  const chatQ = query(usersRef,where("chatId","==",chatId));
-  const chatSnap = await getDocs(chatQ);
-  if(!chatSnap.empty) return alert("Chat ID already exists");
-  const user = auth.currentUser;
-  if(!user) return alert("No logged-in user");
-  await setDoc(doc(db,"users",user.uid),{chatId,email:user.email,stars:0,cash:0,isAdmin:user.email==="paygeda@gmail.com"});
-  location.reload();
+    // Create Firestore user if doesn't exist
+    const userRef = doc(db,"users",userCredential.user.uid);
+    const docSnap = await getDoc(userRef);
+    if(!docSnap.exists()){
+      await setDoc(userRef,{chatId:generateGuestName(),email:userCredential.user.email,stars:0,cash:0,isAdmin:userCredential.user.email==="paygeda@gmail.com"});
+    }
+  }catch(err){console.error(err);alert("Google sign-in failed. Try again.");}
 });
 
 // Auth state listener
@@ -130,16 +131,14 @@ onAuthStateChanged(auth, async user=>{
   if(user){
     const userRef = doc(db,"users",user.uid);
     const docSnap = await getDoc(userRef);
-    if(!docSnap.exists()){document.getElementById("chatIdPanel").style.display="block";}
-    const userData = (await getDoc(userRef)).data();
-    currentUser={uid:user.uid,...userData};
-
+    currentUser = {uid:user.uid,...docSnap.data()};
     document.getElementById("profileSection").style.display="flex";
-    document.getElementById("profileName").innerText=currentUser.chatId || generateGuestName();
-    document.getElementById("uid").innerText=currentUser.uid;
+    document.getElementById("profileName").innerText = currentUser.chatId;
+    document.getElementById("uid").innerText = currentUser.uid;
     document.getElementById("redeemBtn").style.display="inline-block";
 
-    onSnapshot(userRef,snap=>{
+    // Live stars & cash
+    onSnapshot(userRef, snap=>{
       const d = snap.data();
       document.getElementById("starCount").innerText = d.stars;
       document.getElementById("cashAmount").innerText = d.cash || 0;
@@ -147,35 +146,28 @@ onAuthStateChanged(auth, async user=>{
 
     // Load chat messages
     const messagesRef = collection(db,"messages");
-    const q = query(messagesRef,orderBy("timestamp"));
-    onSnapshot(q,snap=>{
+    const q = query(messagesRef, orderBy("timestamp"));
+    onSnapshot(q, snap=>{
       const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML="";
+      messagesDiv.innerHTML = "";
       snap.forEach(doc=>{
-        const m=doc.data();
-        const div=document.createElement("div");
+        const m = doc.data();
+        const div = document.createElement("div");
         div.classList.add("msg");
         if(m.uid===currentUser.uid) div.classList.add("me");
-        div.innerHTML=`<span class="meta">${m.chatId}:</span> <span class="content">${m.content}</span>`;
+        div.innerHTML = `<span class="meta" style="color:${getColorForUser(m.chatId)}">${m.chatId}:</span> <span class="content">${m.content}</span>`;
         messagesDiv.appendChild(div);
-        messagesDiv.scrollTop=messagesDiv.scrollHeight;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     });
 
-    // Enable send message
-    document.getElementById("sendBtn").addEventListener("click", async ()=>{
-      const msg=document.getElementById("messageInput").value.trim();
+    // Send message
+    document.getElementById("sendBtn").onclick = async ()=>{
+      const msg = document.getElementById("messageInput").value.trim();
       if(!msg) return;
       await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp()});
       document.getElementById("messageInput").value="";
-    });
-
-  } else {
-    document.getElementById("messages").style.display="none";
-    document.getElementById("sendArea").style.display="none";
-    document.getElementById("profileSection").style.display="none";
-    document.getElementById("guestSignIn").style.display="block";
-    document.getElementById("chatIdPanel").style.display="none";
+    };
   }
 });
 </script>
