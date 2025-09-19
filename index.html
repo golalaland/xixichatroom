@@ -1,164 +1,257 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Xixi — Money Talk 💸</title>
-  <style>
-    :root{
-      --bg:#000;
-      --card:#111;
-      --muted:#aaa;
-      --accent:#ff1493; /* Neon pink theme */
-    }
-    body{
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:var(--bg);
-      color:white;
-      display:flex;
-      flex-direction:column;
-      height:100vh;
-      overflow:hidden;
-    }
-    header{
-      background:var(--card);
-      padding:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      font-size:12px;
-      font-weight:bold;
-    }
-    .stats{
-      display:flex;
-      gap:15px;
-      align-items:center;
-      font-size:13px;
-    }
-    .stats span{
-      color:var(--accent);
-    }
-    .stats b{
-      color:white;
-      margin-left:5px;
-    }
-    .redeem-btn{
-      padding:5px 12px;
-      border:1px solid var(--accent);
-      border-radius:8px;
-      background:transparent;
-      color:var(--accent);
-      font-size:12px;
-      cursor:pointer;
-      transition:0.2s;
-    }
-    .redeem-btn:hover{
-      background:var(--accent);
-      color:#000;
-    }
-    .video-frame{
-      width:100%;
-      height:200px;
-      background:#222;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      position:sticky;
-      top:0;
-      z-index:5;
-    }
-    .chat-container{
-      flex:1;
-      overflow-y:auto;
-      padding:10px;
-      display:flex;
-      flex-direction:column;
-    }
-    .msg{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      font-size:14px;
-      margin:2px 0;
-    }
-    .username{
-      font-weight:bold;
-    }
-    .chatbar{
-      display:flex;
-      padding:10px;
-      background:var(--card);
-    }
-    .chatbar input{
-      flex:1;
-      padding:10px;
-      border-radius:8px;
-      border:none;
-      outline:none;
-      background:#222;
-      color:white;
-    }
-    .chatbar button{
-      margin-left:8px;
-      padding:10px 15px;
-      border:none;
-      border-radius:8px;
-      background:var(--accent);
-      color:white;
-      font-weight:bold;
-      cursor:pointer;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Xixi — Money Talk 💸</title>
+<link rel="icon" href="data:," />
+<style>
+:root{
+  --bg:#000;
+  --card:#111;
+  --muted:#aaa;
+  --accent:#FF1493; /* theme neon pink */
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:white;
+  font-family:Arial, sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+}
+header{
+  background:var(--card);
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+#profileSection{display:flex;gap:20px;align-items:center;}
+.stat{font-weight:bold;color:var(--accent);font-size:14px;}
+.stat span{color:white;}
+#redeemBtn{
+  background:var(--accent);
+  border:none;
+  padding:5px 12px;
+  border-radius:4px;
+  font-weight:bold;
+  cursor:pointer;
+  margin-left:20px;
+}
+#videoFrame{
+  background:#222;
+  height:200px;
+  margin:10px;
+}
+#messages{
+  flex:1;
+  overflow-y:auto;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+}
+.msg{margin-bottom:6px;font-size:14px;text-align:left;}
+.msg .meta{font-weight:bold;margin-right:4px;}
+#sendArea{
+  display:flex;
+  padding:10px;
+  background:var(--card);
+}
+#messageInput{
+  flex:1;
+  padding:8px;
+  border:none;
+  border-radius:4px;
+}
+#sendBtn{
+  background:var(--accent);
+  border:none;
+  padding:8px 16px;
+  border-radius:4px;
+  margin-left:8px;
+  cursor:pointer;
+}
+#guestSignIn{text-align:center;margin-top:20px;}
+#guestName{font-size:20px;font-weight:bold;margin-bottom:10px;}
+#googleSignIn{
+  background:var(--accent);
+  border:none;
+  padding:10px 16px;
+  border-radius:4px;
+  cursor:pointer;
+  font-weight:bold;
+}
+#chatIdPopup{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  background:var(--card);
+  padding:20px;
+  border:2px solid var(--accent);
+  border-radius:6px;
+  display:none;
+  z-index:1000;
+}
+#chatIdInput{
+  width:100%;
+  padding:8px;
+  border:1px solid var(--accent);
+  border-radius:4px;
+  background:#111;
+  color:white;
+  margin-bottom:10px;
+  font-weight:bold;
+}
+</style>
 </head>
 <body>
-  <header>
-    <div class="stats">
-      <div>STARS COLLECTED:<b id="starsCount">0</b></div>
-      <div>CASH EARNED:<b id="cashCount">0</b></div>
-    </div>
-    <button class="redeem-btn">REDEEM</button>
-  </header>
-
-  <div class="video-frame">🎥 Video Frame</div>
-
-  <div class="chat-container" id="chatBox"></div>
-
-  <div class="chatbar">
-    <input id="msgInput" placeholder="Type your message..." />
-    <button onclick="sendMsg()">Send</button>
+<header>
+  <div id="profileSection" style="display:none;">
+    <div class="stat">STARS COLLECTED: <span id="starCount">0</span></div>
+    <div class="stat">CASH EARNED: <span id="cashAmount">₦0</span></div>
+    <button id="redeemBtn">REDEEM</button>
   </div>
+</header>
 
-  <script>
-    let stars=0;
-    setInterval(()=>{
-      stars++;
-      document.getElementById("starsCount").innerText=stars;
-    },10000); // +1 every 10 seconds
+<div id="videoFrame"></div>
 
-    function randomColor(){
-      const colors=["#ff1493","#1e90ff","#32cd32","#ffa500","#ff4500","#9370db"];
-      return colors[Math.floor(Math.random()*colors.length)];
+<div id="guestSignIn">
+  <div id="guestName"></div>
+  <button id="googleSignIn">Sign in with Google</button>
+</div>
+
+<div id="messages"></div>
+
+<div id="sendArea" style="display:none;">
+  <input type="text" id="messageInput" placeholder="Type a message..." />
+  <button id="sendBtn">Send</button>
+</div>
+
+<div id="chatIdPopup">
+  <h3 style="margin-top:0;color:var(--accent)">Choose your Chat ID</h3>
+  <input type="text" id="chatIdInput" placeholder="Enter Chat ID" />
+  <button id="chatIdSaveBtn" style="background:var(--accent);border:none;padding:8px 16px;border-radius:4px;font-weight:bold;cursor:pointer;">Save</button>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot,collection,addDoc,query,orderBy,serverTimestamp,getDocs,where} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"YOUR_API_KEY",
+  authDomain:"YOUR_PROJECT.firebaseapp.com",
+  projectId:"YOUR_PROJECT_ID",
+  storageBucket:"YOUR_PROJECT.appspot.com",
+  messagingSenderId:"SENDER_ID",
+  appId:"APP_ID"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser=null;
+
+function getColorForUser(name){
+  let hash=0;
+  for(let i=0;i<name.length;i++){hash=name.charCodeAt(i)+((hash<<5)-hash);}
+  const c=(hash & 0x00FFFFFF).toString(16).toUpperCase();
+  return "#"+"00000".substring(0,6-c.length)+c;
+}
+
+// Guest typing effect
+function typeText(el,text,color){
+  let i=0;
+  el.style.color=color;
+  const interval=setInterval(()=>{
+    el.textContent=text.substring(0,i);
+    i++;
+    if(i>text.length) clearInterval(interval);
+  },80);
+}
+const randomNum=Math.floor(Math.random()*9000)+1000;
+const guestColor=`hsl(${Math.floor(Math.random()*360)},70%,60%)`;
+typeText(document.getElementById("guestName"),"Hi, Guest"+randomNum,guestColor);
+
+// Google Sign-In
+document.getElementById("googleSignIn").addEventListener("click",async()=>{
+  try{
+    const provider=new GoogleAuthProvider();
+    const userCredential=await signInWithPopup(auth,provider);
+    document.getElementById("guestSignIn").style.display="none";
+    const userRef=doc(db,"users",userCredential.user.uid);
+    const docSnap=await getDoc(userRef);
+    if(!docSnap.exists()){
+      await setDoc(userRef,{chatId:"",stars:0,cash:0,isAdmin:false,email:userCredential.user.email});
+      setTimeout(()=>{document.getElementById("chatIdPopup").style.display="block";},5000);
     }
+  }catch(e){console.error(e);}
+});
 
-    function sendMsg(){
-      const input=document.getElementById("msgInput");
-      if(input.value.trim()==="") return;
-      const chatBox=document.getElementById("chatBox");
-      const msg=document.createElement("div");
-      msg.className="msg";
-      const user=document.createElement("span");
-      user.className="username";
-      user.style.color=randomColor();
-      user.innerText="You:";
-      const text=document.createElement("span");
-      text.innerText=input.value;
-      msg.appendChild(user);
-      msg.appendChild(text);
-      chatBox.appendChild(msg);
-      chatBox.scrollTop=chatBox.scrollHeight;
-      input.value="";
-    }
-  </script>
+// Save Chat ID
+document.getElementById("chatIdSaveBtn").addEventListener("click",async()=>{
+  const newId=document.getElementById("chatIdInput").value.trim();
+  if(newId.length<4)return alert("Chat ID must be at least 4 characters.");
+  const usersRef=collection(db,"users");
+  const chatQ=query(usersRef,where("chatId","==",newId));
+  const chatSnap=await getDocs(chatQ);
+  if(!chatSnap.empty)return alert("Chat ID already exists.");
+  await updateDoc(doc(db,"users",currentUser.uid),{chatId:newId});
+  location.reload();
+});
+
+// Auth state
+onAuthStateChanged(auth,async user=>{
+  if(user){
+    const userRef=doc(db,"users",user.uid);
+    const userData=(await getDoc(userRef)).data();
+    currentUser={uid:user.uid,...userData};
+    document.getElementById("profileSection").style.display="flex";
+    document.getElementById("sendArea").style.display="flex";
+
+    // Stars + Cash live
+    onSnapshot(userRef,docSnap=>{
+      currentUser.stars=docSnap.data().stars||0;
+      currentUser.cash=docSnap.data().cash||0;
+      document.getElementById("starCount").innerText=currentUser.stars;
+      document.getElementById("cashAmount").innerText="₦"+currentUser.cash;
+    });
+
+    // Auto star increment
+    setInterval(async()=>{
+      const ref=doc(db,"users",currentUser.uid);
+      await updateDoc(ref,{stars:(currentUser.stars||0)+1});
+    },10000);
+
+    // Live chat
+    const messagesDiv=document.getElementById("messages");
+    const messagesRef=collection(db,"messages");
+    const q=query(messagesRef,orderBy("timestamp"));
+    onSnapshot(q,snap=>{
+      messagesDiv.innerHTML="";
+      snap.forEach(doc=>{
+        const m=doc.data();
+        const div=document.createElement("div");
+        div.classList.add("msg");
+        const color=getColorForUser(m.chatId||"Guest");
+        div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
+        messagesDiv.appendChild(div);
+      });
+      messagesDiv.scrollTop=messagesDiv.scrollHeight;
+    });
+
+    // Send message
+    document.getElementById("sendBtn").onclick=async()=>{
+      const msg=document.getElementById("messageInput").value.trim();
+      if(!msg)return;
+      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId||"Guest",content:msg,timestamp:serverTimestamp()});
+      document.getElementById("messageInput").value="";
+    };
+  }
+});
+</script>
 </body>
 </html>
