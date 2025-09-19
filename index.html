@@ -39,19 +39,34 @@
     }
     .stats {
       margin:10px 0;
-      font-size:13px;
+      font-size:14px; /* increased by 1px */
       color:var(--muted);
     }
     .stats span {
       font-weight:400;
       color:#fff;
       font-family:monospace;
-      font-size:14px; /* increased slightly */
+      font-size:13px; /* reduced to 13px */
     }
     .stars {
       margin:15px 0;
-      font-size:16px;
+      font-size:14px; /* increased by 1px */
       color:gold;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+    }
+    .stars svg {
+      width:18px;
+      height:18px;
+      flex-shrink:0;
+    }
+    .stars span {
+      font-weight:400;
+      color:#fff;
+      font-family:monospace;
+      font-size:13px; /* reduced to 13px */
     }
     button {
       background:var(--accent);
@@ -71,7 +86,12 @@
   <div class="card">
     <h1>Money Talk 💸</h1>
     <div class="stats">CASH EARNED: <span id="cashCount">₦0</span></div>
-    <div class="stars">⭐ <span id="starCount">0</span></div>
+    <div class="stars">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="gold">
+        <path d="M12 .587l3.668 7.568L24 9.75l-6 5.847L19.335 24 12 19.897 4.665 24 6 15.597 0 9.75l8.332-1.595z"/>
+      </svg>
+      <span id="starCount">0</span>
+    </div>
     <button onclick="add()">Add Money & Star</button>
   </div>
 
