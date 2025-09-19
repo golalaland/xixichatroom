@@ -9,11 +9,11 @@
   --bg:#000;
   --card:#111;
   --muted:#aaa;
-  --accent:#FF1493; /* neon pink */
+  --accent:#FF1493;
   --neon:#FF1493;
   --glass: rgba(255,255,255,0.03);
 }
-body,html{margin:0;padding:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);height:100%;display:flex;flex-direction:column;}
+body,html{margin:0;padding:0;font-family:Arial, sans-serif;color:#fff;background:var(--bg);height:100%;display:flex;flex-direction:column;}
 .app{display:flex;flex-direction:column;flex:1;gap:12px;padding:12px;}
 .brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
 .room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
@@ -137,13 +137,18 @@ document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
   const provider = new GoogleAuthProvider();
   try{
     const userCredential = await signInWithPopup(auth,provider);
+
+    // Hide guest greeting & sign-in completely
     document.getElementById("guestSignIn").style.display="none";
+
     const userRef = doc(db,"users",userCredential.user.uid);
     const docSnap = await getDoc(userRef);
     if(!docSnap.exists()){
       await setDoc(userRef,{chatId:"",stars:0,cash:0,isAdmin:false,email:userCredential.user.email});
     }
     currentUser = {uid:userCredential.user.uid,...(await getDoc(userRef)).data()};
+
+    // Show Chat ID popup after 5s
     setTimeout(()=>{document.getElementById("chatIdPopup").style.display="block";},5000);
   }catch(e){console.error(e);}
 });
@@ -166,9 +171,11 @@ onAuthStateChanged(auth,async user=>{
     const userRef = doc(db,"users",user.uid);
     const userData = (await getDoc(userRef)).data();
     currentUser={uid:user.uid,...userData};
+
     document.getElementById("profileSection").style.display="flex";
     document.getElementById("messages").style.display="flex";
     document.getElementById("sendArea").style.display="flex";
+
     document.getElementById("profileName").innerText=currentUser.chatId || "Guest User";
     document.getElementById("uid").innerText=currentUser.uid;
     document.getElementById("starCount").innerText=currentUser.stars||0;
