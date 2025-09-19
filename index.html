@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Xixi — Money Talk 💸</title>
+<link rel="icon" href="data:," />
+<style>
+:root{
+  --bg:#000;
+  --card:#111;
+  --muted:#aaa;
+  --accent:#FF1493; /* deep pink */
+  --glass: rgba(255,255,255,0.03);
+}
+html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
+.app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;box-sizing:border-box;}
+.brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
+.room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
+#authBox{margin-bottom:12px;}
+#authBox input{display:block;width:100%;margin-bottom:6px;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);background:#000;color:#fff;font-size:14px;}
+#authBox .controls-row{display:flex;gap:6px;margin-top:6px;}
+#authBox button.btn{background:var(--accent);color:#000;border:0;padding:6px 10px;border-radius:8px;cursor:pointer;}
+#authBox button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted);padding:6px;border-radius:8px;}
+#center{flex:1;display:flex;flex-direction:column;gap:6px;}
+#videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;position:sticky;top:0;z-index:5;}
+#videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
+#messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
+.msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;position:relative;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards; justify-content:flex-start;}
+.msg.me {background: rgba(255,20,147,0.1);}
+.msg .meta{font-weight:700;font-size:14px;}  
+.msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}  
+.send-area{
+  display:flex;align-items:center;gap:6px;
+  background:var(--card);padding:6px 12px;
+  position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);
+  border-radius:20px;
+}
+.send-area input{
+  flex:1;padding:10px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:#111;color:#fff;font-size:14px;outline:none;transition:0.2s all;
+}
+.send-area input::placeholder{color:var(--muted);}
+.send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
+.send-area button.btn{padding:8px 14px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;transition:0.2s all;}
+.send-area button.btn:hover{filter:brightness(1.1);}
+.profile{display:flex;flex-direction:column;gap:4px;margin-top:12px;}
+.profile .small{font-size:12px;color:var(--muted);}
+.star-popup{
+  position:fixed;left:50%;top:18%;transform:translateX(-50%);
+  background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);
+  display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;
+}
+.redeem-btn{
+  display:none; /* hidden until login */
+  background:var(--accent);color:#000;font-size:11px;
+  padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;
+  margin-left:auto;text-decoration:none;
+}
+.admin-panel{
+  display:none;
+  margin-top:8px;
+  padding:6px;
+  background:#111;
+  border-radius:8px;
+  border:1px solid rgba(255,20,147,0.3);
+}
+.admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
+.change-id-btn{background:var(--accent);color:#000;padding:4px 6px;margin-left:6px;border-radius:6px;font-size:11px;cursor:pointer;}
+@keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
+@keyframes cashFlash {
+  0% { transform: scale(1); color: #fff; }
+  25% { transform: scale(1.2); color: #FF1493; }
+  50% { transform: scale(1.1); color: #fff; }
+  75% { transform: scale(1.15); color: #FF1493; }
+  100% { transform: scale(1); color: #fff; }
+}
+.cash-update {
+  animation: cashFlash 0.5s ease forwards;
+}
+@media (max-width:600px){
+  .send-area{padding:6px 8px;}
+  .send-area button.btn{padding:6px 12px;font-size:13px;}
+  .send-area input{font-size:13px;padding:8px 12px;}
+  .brand{font-size:24px;}
+  .room-desc{font-size:11px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="brand">乂丨乂丨</div>
+  <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
+
+  <!-- Auth -->
+  <div id="authBox">
+    <input type="text" id="authUsername" placeholder="Desired Chat ID" />
+    <input type="email" id="authEmail" placeholder="Email" />
+    <input type="password" id="authPassword" placeholder="Password" />
+    <div class="controls-row">
+      <button id="signinBtn" class="btn">Sign in</button>
+      <button id="signupBtn" class="ghost">Sign up</button>
+      <button id="googleSignInBtn" class="btn">Sign in with Google</button>
+      <button id="signoutBtn" class="ghost" style="display:none">Sign out</button>
+    </div>
+    <div id="authMsg" class="small-ghost" style="margin-top:6px"></div>
+  </div>
+
+  <!-- Center panel -->
+  <div id="center">
+    <div id="videoContainer">
+      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video" allowfullscreen></iframe>
+    </div>
+
+    <div id="messages"></div>
+
+    <div class="send-area" id="sendArea" style="display:none;">
+      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <button id="sendBtn" class="btn">Send</button>
+    </div>
+  </div>
+
+  <!-- Profile -->
+  <div class="profile">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <strong id="profileName">GUEST 0000</strong>
+        <button class="change-id-btn" id="changeIdBtn" style="display:none">Change ID</button>
+        <div class="small">Stars: <span id="starCount">0</span> ⭐</div>
+        <div class="small">CASH: ₦<span id="cashCount">0</span></div>
+        <div class="small">UID: <span id="uid">—</span></div>
+      </div>
+      <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
+    </div>
+    <!-- Admin panel -->
+    <div class="admin-panel" id="adminPanel">
+      <button id="giveStarAdmin">Give Star to Selected User</button>
+      <button id="whitelistEmailAdmin">Whitelist Email</button>
+      <button id="adminLogoutBtn">Logout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Star popup -->
+<div class="star-popup" id="starPopup">
+  <div id="starText">You've just earned +1 star! ⭐</div>
+  <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+  getAuth, setPersistence, browserLocalPersistence, 
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+  onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { 
+  getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, orderBy, serverTimestamp, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
+  authDomain: "metaverse-1010.firebaseapp.com",
+  projectId: "metaverse-1010",
+  storageBucket: "metaverse-1010.firebasestorage.app",
+  messagingSenderId: "1044064238233",
+  appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+  measurementId: "G-S77BMC266C"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let currentUser = null;
+let userColors = {};
+
+// Guest random ID generator
+function generateGuestName(){
+  return "GUEST " + Math.floor(1000 + Math.random()*9000);
+}
+
+// Color per user
+function getColorForUser(chatId){
+  if(!userColors[chatId]){
+    const colors = ["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
+    userColors[chatId] = colors[Math.floor(Math.random()*colors.length)];
+  }
+  return userColors[chatId];
+}
+
+// Persistence
+setPersistence(auth, browserLocalPersistence).catch(err=>console.error(err));
+
+// Auth functions
+document.getElementById("signupBtn").addEventListener("click", async ()=>{
+  const email = document.getElementById("authEmail").value.trim();
+  const pass = document.getElementById("authPassword").value;
+  const chatId = document.getElementById("authUsername").value.trim();
+  if(!chatId||chatId.length<4) return alert("Chat ID must be at least 4 characters.");
+
+  const usersRef = collection(db,"users");
+  const chatQ = query(usersRef,where("chatId","==",chatId));
+  const chatSnap = await getDocs(chatQ);
+  if(!chatSnap.empty) return alert("Chat ID already exists.");
+
+  const userCredential = await createUserWithEmailAndPassword(auth,email,pass);
+  await setDoc(doc(db,"users",userCredential.user.uid),{
+    chatId,email,stars:0,cash:0,isAdmin:email.toLowerCase()==="paygeda@gmail.com"
+  });
+});
+
+document.getElementById("signinBtn").addEventListener("click", async ()=>{
+  const email = document.getElementById("authEmail").value.trim();
+  const pass = document.getElementById("authPassword").value;
+  await signInWithEmailAndPassword(auth,email,pass);
+});
+
+document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
+  const provider = new GoogleAuthProvider();
+  await signInWithPopup(auth,provider);
+});
+
+document.getElementById("signoutBtn").addEventListener("click", async ()=>{
+  await signOut(auth);
+});
+
+document.getElementById("adminLogoutBtn").addEventListener("click", async ()=>{
+  await signOut(auth);
+});
+
+document.getElementById("changeIdBtn").addEventListener("click", async ()=>{
+  if(!currentUser) return;
+  const newId = prompt("Enter new Chat ID:", currentUser.chatId);
+  if(!newId||newId.length<4) return alert("Chat ID must be at least 4 characters.");
+  const usersRef = collection(db,"users");
+  const chatQ = query(usersRef,where("chatId","==",newId));
+  const chatSnap = await getDocs(chatQ);
+  if(!chatSnap.empty) return alert("Chat ID already exists.");
+  await updateDoc(doc(db,"users",currentUser.uid),{chatId:newId});
+  location.reload();
+});
+
+// Stars auto-increment
+setInterval(async ()=>{
+  if(!currentUser) return;
+  const userDoc = doc(db,"users",currentUser.uid);
+  await updateDoc(userDoc,{stars:currentUser.stars+1});
+},10000);
+
+// Chat send
+const messagesDiv = document.getElementById("messages");
+document.getElementById("sendBtn").addEventListener("click", async ()=>{
+  const msg = document.getElementById("messageInput").value.trim();
+  if(!msg) return;
+  await addDoc(collection(db,"messages"),{
+    uid:currentUser.uid,
+    chatId:currentUser.chatId,
+    content:msg,
+    timestamp:serverTimestamp()
+  });
+  document.getElementById("messageInput").value="";
+});
+
+// Auth state change
+onAuthStateChanged(auth,async user=>{
+  const cashSpan = document.getElementById('cashCount');
+  let lastCash = 0;
+
+  if(user){
+    const userRef = doc(db,"users",user.uid);
+    const docSnap = await getDoc(userRef);
+    if(!docSnap.exists()){
+      // For Google signup, assign chatId
+      const chatId = generateGuestName();
+      await setDoc(userRef,{chatId,email:user.email,stars:0,cash:0,isAdmin:user.email==="paygeda@gmail.com"});
+    }
+    
+    const userData = (await getDoc(userRef)).data();
+    currentUser = {uid:user.uid,...userData};
+    
+    document.getElementById("authBox").style.display="none";
+    document.getElementById("sendArea").style.display="flex";
+    document.getElementById("redeemBtn").style.display="inline-block";
+    document.getElementById("profileName").innerText=currentUser.chatId;
+    document.getElementById("uid").innerText=currentUser.uid;
+    document.getElementById("changeIdBtn").style.display="inline-block";
+    if(currentUser.isAdmin) document.getElementById("adminPanel").style.display="block";
+    
+    // Live stars & cash
+    onSnapshot(userRef,docSnap=>{
+      const data = docSnap.data();
+      currentUser.stars = data.stars || 0;
+      currentUser.cash = data.cash || 0;
+      
+      document.getElementById("starCount").innerText = currentUser.stars;
+      
+      // Cash animation
+      const newCash = Number(currentUser.cash);
+      if(newCash !== lastCash){
+        cashSpan.textContent = newCash.toLocaleString();
+        cashSpan.classList.add('cash-update');
+        setTimeout(()=>cashSpan.classList.remove('cash-update'), 500);
+        lastCash = newCash;
+      }
+    });
+
+    // Live chat
+    const messagesRef = collection(db,"messages");
+    const q = query(messagesRef,orderBy("timestamp"));
+    onSnapshot(q,snap=>{
+      messagesDiv.innerHTML="";
+      snap.forEach(doc=>{
+        const m = doc.data();
+        const div = document.createElement("div");
+        div.classList.add("msg");
+        if(m.uid===currentUser.uid) div.classList.add("me");
+        const color = getColorForUser(m.chatId);
+        div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId}:</span> <span class="content">${m.content}</span>`;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop=messagesDiv.scrollHeight;
+      });
+    });
+  } else {
+    currentUser=null;
+    document.getElementById("authBox").style.display="block";
+    document.getElementById("sendArea").style.display="none";
+    document.getElementById("redeemBtn").style.display="none";
+    document.getElementById("changeIdBtn").style.display="none";
+    document.getElementById("adminPanel").style.display="none";
+    document.getElementById("profileName").innerText=generateGuestName();
+    document.getElementById("uid").innerText="—";
+    document.getElementById("starCount").innerText="0";
+    cashSpan.textContent = "0";
+  }
+});
+</script>
+</body>
+</html>
