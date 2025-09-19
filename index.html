@@ -10,16 +10,16 @@
   --bg:#000;
   --card:#111;
   --muted:#aaa;
-  --accent:#FF1493; /* deep pink */
+  --accent:#FF1493; /* theme color */
   --glass: rgba(255,255,255,0.03);
 }
 html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
 .app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;box-sizing:border-box;}
 .brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
 .room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
-#center{flex:1;display:flex;flex-direction:column;gap:6px;}
-#videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;position:sticky;top:0;z-index:5;}
-#videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
+#center{flex:1;display:flex;flex-direction:column;gap:12px;align-items:center;}
+#videoContainer, #videoContainer2{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;}
+#videoContainer iframe, #videoContainer2 iframe{width:100%;height:100%;border:0;border-radius:12px;}
 #messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;display:none;}
 .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;position:relative;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards; justify-content:flex-start;}
 .msg.me {background: rgba(255,20,147,0.1);}
@@ -48,7 +48,7 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
   display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;
 }
 .redeem-btn{
-  display:none; /* hidden until login */
+  display:none;
   background:var(--accent);color:#000;font-size:11px;
   padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;
   margin-left:auto;text-decoration:none;
@@ -64,16 +64,11 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
 .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
 .change-id-btn{background:var(--accent);color:#000;padding:4px 6px;margin-left:6px;border-radius:6px;font-size:11px;cursor:pointer;}
 .google-login-btn{
-  display:block;margin:12px auto;padding:10px 20px;background:#4285F4;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;
+  display:block;margin:6px auto;padding:10px 20px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;
 }
+#guestIdInput{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);margin-bottom:6px;width:200px;text-align:center;}
+#guestNameLabel{margin-bottom:6px;font-weight:600;}
 @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
-@media (max-width:600px){
-  .send-area{padding:6px 8px;}
-  .send-area button.btn{padding:6px 12px;font-size:13px;}
-  .send-area input{font-size:13px;padding:8px 12px;}
-  .brand{font-size:24px;}
-  .room-desc{font-size:11px;}
-}
 </style>
 </head>
 <body>
@@ -81,15 +76,24 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
   <div class="brand">乂丨乂丨</div>
   <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
 
-  <!-- Center panel -->
   <div id="center">
+    <!-- Top video -->
     <div id="videoContainer">
       <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video" allowfullscreen></iframe>
     </div>
+    <!-- Bottom video -->
+    <div id="videoContainer2">
+      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video 2" allowfullscreen></iframe>
+    </div>
 
-    <!-- Google Sign-In button -->
-    <button id="googleSignInBtn" class="google-login-btn">Sign in with Google</button>
+    <!-- Guest + Google sign-in -->
+    <div id="guestSignIn" style="text-align:center;margin-top:12px;">
+      <div id="guestNameLabel">Guest 0000</div>
+      <input type="text" id="guestIdInput" placeholder="Choose your Chat ID" />
+      <button id="googleSignInBtn" class="google-login-btn">Sign in with Google</button>
+    </div>
 
+    <!-- Chat area -->
     <div id="messages"></div>
     <div class="send-area" id="sendArea">
       <input type="text" id="messageInput" placeholder="Type your message..." />
@@ -102,14 +106,13 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div>
         <strong id="profileName">GUEST 0000</strong>
-        <button class="change-id-btn" id="changeIdBtn" style="display:none">Change ID</button>
+        <button class="change-id-btn" id="changeIdBtn">Change ID</button>
         <div class="small">Stars: <span id="starCount">0</span> ⭐</div>
         <div class="small">Cash: ₦<span id="cashAmount">0</span></div>
         <div class="small">UID: <span id="uid">—</span></div>
       </div>
       <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
     </div>
-    <!-- Admin panel -->
     <div class="admin-panel" id="adminPanel">
       <button id="giveStarAdmin">Give Star to Selected User</button>
       <button id="giveCashAdmin">Give Cash</button>
@@ -129,13 +132,12 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
   getAuth, setPersistence, browserLocalPersistence, 
-  onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup 
+  onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { 
   getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
   authDomain: "metaverse-1010.firebaseapp.com",
@@ -152,7 +154,10 @@ const db = getFirestore(app);
 let currentUser = null;
 let userColors = {};
 
-// Color per user
+// Guest name generator
+function generateGuestName(){
+  return "Guest "+Math.floor(1000+Math.random()*9000);
+}
 function getColorForUser(chatId){
   if(!userColors[chatId]){
     const colors = ["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
@@ -161,8 +166,7 @@ function getColorForUser(chatId){
   return userColors[chatId];
 }
 
-// Persistence
-setPersistence(auth, browserLocalPersistence).catch(err=>console.error(err));
+setPersistence(auth,browserLocalPersistence).catch(console.error);
 
 // Chat send
 const messagesDiv = document.getElementById("messages");
@@ -178,39 +182,51 @@ document.getElementById("sendBtn").addEventListener("click", async ()=>{
   document.getElementById("messageInput").value="";
 });
 
+// Update guest label dynamically
+const guestLabel = document.getElementById("guestNameLabel");
+guestLabel.innerText = generateGuestName();
+
 // Google Sign-In
 document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
+  let chatId = document.getElementById("guestIdInput").value.trim();
+  if(!chatId || chatId.length<4){ 
+    return alert("Chat ID must be at least 4 characters");
+  }
+  const usersRef = collection(db,"users");
+  const chatQ = query(usersRef,where("chatId","==",chatId));
+  const chatSnap = await getDocs(chatQ);
+  if(!chatSnap.empty) return alert("Chat ID already exists.");
+  
   const provider = new GoogleAuthProvider();
-  await signInWithPopup(auth,provider);
+  const result = await signInWithPopup(auth,provider);
+  const user = result.user;
+  
+  await setDoc(doc(db,"users",user.uid),{
+    chatId,email:user.email,stars:0,cash:0,isAdmin:user.email==="paygeda@gmail.com"
+  });
+  
+  location.reload(); // reload to reflect chatId and stats
 });
 
 // Auth state change
-onAuthStateChanged(auth,async user=>{
+onAuthStateChanged(auth, async user=>{
   if(user){
     const userRef = doc(db,"users",user.uid);
     const docSnap = await getDoc(userRef);
-    if(!docSnap.exists()){
-      // For Google signup, assign chatId and initial cash
-      const chatId = "GUEST "+Math.floor(1000+Math.random()*9000);
-      await setDoc(userRef,{
-        chatId,email:user.email,stars:0,cash:0,
-        isAdmin:user.email==="paygeda@gmail.com"
-      });
-    }
-    const userData = (await getDoc(userRef)).data();
+    if(!docSnap.exists()) return;
+    const userData = docSnap.data();
     currentUser = {uid:user.uid,...userData};
     
-    // Show profile & chat
-    document.getElementById("googleSignInBtn").style.display="none";
+    document.getElementById("guestSignIn").style.display="none";
     document.getElementById("messages").style.display="flex";
     document.getElementById("sendArea").style.display="flex";
     document.getElementById("profileSection").style.display="flex";
+    
     document.getElementById("profileName").innerText=currentUser.chatId;
     document.getElementById("uid").innerText=currentUser.uid;
-    if(currentUser.isAdmin) document.getElementById("adminPanel").style.display="block";
-    
+
     // Live stars & cash
-    onSnapshot(userRef,docSnap=>{
+    onSnapshot(userRef, docSnap=>{
       const data = docSnap.data();
       currentUser.stars = data.stars;
       currentUser.cash = data.cash || 0;
@@ -234,12 +250,14 @@ onAuthStateChanged(auth,async user=>{
         messagesDiv.scrollTop=messagesDiv.scrollHeight;
       });
     });
+
   } else {
-    currentUser=null;
-    document.getElementById("googleSignInBtn").style.display="block";
+    currentUser = null;
+    document.getElementById("guestSignIn").style.display="block";
     document.getElementById("messages").style.display="none";
     document.getElementById("sendArea").style.display="none";
     document.getElementById("profileSection").style.display="none";
+    guestLabel.innerText = generateGuestName();
   }
 });
 </script>
