@@ -6,147 +6,235 @@
   <title>Xixi — Money Talk 💸</title>
   <link rel="icon" href="data:," />
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: black;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+    :root{
+      --bg:#000;
+      --card:#111;
+      --muted:#aaa;
+      --accent:#FF1493; /* deep pink */
+      --glass: rgba(255,255,255,0.03);
     }
-    #videoFrame {
-      flex: 0 0 40%;
-      background: #111;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #stats {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #000;
-      padding: 8px 12px;
-      font-size: 14px;
-    }
-    .stat {
-      font-weight: bold;
-    }
-    #chat {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-    }
-    .msg {
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .username {
-      font-weight: bold;
-    }
-    #inputBar {
-      display: flex;
-      border-top: 1px solid #333;
-    }
-    #inputBar input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      outline: none;
-    }
-    #inputBar button {
-      padding: 10px;
-      background: #FF1493;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    #signInArea {
-      text-align: center;
-      padding: 20px;
-    }
-    #signInArea h1 {
-      font-size: 22px;
-      margin-bottom: 12px;
-    }
-    #redeemBtn {
-      background: #FF1493;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
+    .app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;box-sizing:border-box;}
+    .brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
+    .room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
+    #authBox{margin-bottom:12px;text-align:center;}
+    #authBox button.btn{background:var(--accent);color:#000;border:0;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;}
+    #center{flex:1;display:flex;flex-direction:column;gap:6px;}
+    #videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;position:sticky;top:0;z-index:5;}
+    #videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
+    #guestMsg{font-size:16px;font-weight:600;margin:6px 0;color:var(--accent);text-align:center;}
+    #messages{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
+    .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;}
+    .msg.me{background:rgba(255,20,147,0.1);}
+    .msg .meta{font-weight:700;font-size:14px;}
+    .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}
+    .send-area{display:flex;align-items:center;gap:6px;background:var(--card);padding:6px 12px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:20px;}
+    .send-area input{flex:1;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;}
+    .send-area input::placeholder{color:var(--muted);}
+    .send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
+    .send-area button.btn{padding:8px 14px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;}
+    .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
+    .profile .small{font-size:12px;color:var(--muted);}
+    .stats{font-size:11px;font-weight:700;color:var(--accent);}
+    .stats span{color:#fff;}
+    .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
+    .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
+    .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
+    .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
+    @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
   </style>
 </head>
 <body>
-  <div id="videoFrame">[ Video Frame Placeholder ]</div>
+  <div class="app">
+    <div class="brand">乂丨乂丨</div>
+    <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
 
-  <div id="signInArea">
-    <h1 id="guestGreeting"></h1>
-    <button id="signInBtn">Sign in with Google</button>
-  </div>
+    <!-- Center -->
+    <div id="center">
+      <div id="videoContainer">
+        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+      </div>
 
-  <div id="stats" style="display:none;">
-    <div class="stat">
-      STARS COLLECTED: <span id="starsCount">0</span> ⭐️
+      <!-- greeting + sign-in under video (shown before login) -->
+      <div id="guestMsg"></div>
+      <div id="authBox">
+        <button id="googleSignInBtn" class="btn">Sign in with Google</button>
+      </div>
+
+      <div id="messages"></div>
+
+      <div class="send-area" id="sendArea" style="display:none;">
+        <input type="text" id="messageInput" placeholder="Type your message..." />
+        <button id="sendBtn" class="btn">Send</button>
+      </div>
     </div>
-    <div class="stat">
-      CASH EARNED: ₦<span id="cashCount">0</span>
+
+    <!-- Profile (hidden until login) -->
+    <div class="profile" id="profileBox">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <strong id="profileName">GUEST 0000</strong>
+          <div class="stats">STARS COLLECTED: <span id="starCount">0"></span> ⭐️</div>
+          <div class="stats">CASH EARNED: ₦<span id="cashCount">0</span></div>
+        </div>
+        <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
+      </div>
+      <div class="admin-panel" id="adminPanel">
+        <button id="giveStarAdmin">Give Star</button>
+        <button id="whitelistEmailAdmin">Whitelist Email</button>
+        <button id="adminLogoutBtn">Logout</button>
+      </div>
     </div>
-    <button id="redeemBtn">REDEEM</button>
   </div>
 
-  <div id="chat" style="display:none;"></div>
-
-  <div id="inputBar" style="display:none;">
-    <input type="text" id="msgInput" placeholder="Type a message..." />
-    <button id="sendBtn">Send</button>
+  <!-- Star popup -->
+  <div class="star-popup" id="starPopup">
+    <div id="starText">You've just earned +1 star! ⭐</div>
+    <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
   </div>
 
-  <script>
-    // Guest greeting with random number
-    const randomNum = Math.floor(Math.random() * 9000) + 1000;
-    document.getElementById("guestGreeting").textContent = "Hi, Guest" + randomNum;
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, orderBy, serverTimestamp, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Handle sign in (mock)
-    document.getElementById("signInBtn").addEventListener("click", () => {
-      document.getElementById("signInArea").style.display = "none";
-      document.getElementById("stats").style.display = "flex";
-      document.getElementById("chat").style.display = "block";
-      document.getElementById("inputBar").style.display = "flex";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
+      authDomain: "metaverse-1010.firebaseapp.com",
+      projectId: "metaverse-1010",
+      storageBucket: "metaverse-1010.firebasestorage.app",
+      messagingSenderId: "1044064238233",
+      appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+      measurementId: "G-S77BMC266C"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let currentUser = null;
+    let userColors = {};
+    let seenChatId = false;
+
+    function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
+    function getColorForUser(chatId){if(!userColors[chatId]){const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];userColors[chatId]=c[Math.floor(Math.random()*c.length)];}return userColors[chatId];}
+    setPersistence(auth,browserLocalPersistence).catch(()=>{/* ignore */});
+
+    /* ---------- TYPING GUEST GREETING ---------- */
+    const guestGreetingEl = document.getElementById('guestMsg');
+    function startGuestGreeting(){
+      const text = "Hi, " + generateGuestName();
+      guestGreetingEl.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#FF1493';
+      guestGreetingEl.textContent = "";
+      let i = 0;
+      const t = setInterval(()=>{
+        guestGreetingEl.textContent += text[i++] || "";
+        if(i > text.length) clearInterval(t);
+      }, 60);
+    }
+    startGuestGreeting();
+
+    /* ---------- SIGN IN ---------- */
+    document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
+      const provider=new GoogleAuthProvider();
+      try{
+        await signInWithPopup(auth,provider);
+      }catch(e){
+        console.error(e);
+      }
     });
 
-    // Stars and Cash counters
-    let stars = 0;
-    setInterval(() => {
-      stars++;
-      document.getElementById("starsCount").textContent = stars;
-      document.getElementById("cashCount").textContent = stars * 10; // Example ₦10 per star
-    }, 10000);
+    /* ---------- SEND MESSAGE ---------- */
+    document.getElementById("sendBtn").addEventListener("click",async()=>{
+      const msg=document.getElementById("messageInput").value.trim();
+      if(!msg || !currentUser) return;
+      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp()});
+      document.getElementById("messageInput").value="";
+    });
 
-    // Chat system (mock, aligned left compact)
-    function addMessage(username, text, color) {
-      const msg = document.createElement("div");
-      msg.className = "msg";
-      msg.innerHTML = `<span class="username" style="color:${color}">${username}:</span> <span>${text}</span>`;
-      document.getElementById("chat").appendChild(msg);
-      document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+    /* formatting helper for cash with commas */
+    function formatNumberWithCommas(n){
+      try{
+        return new Intl.NumberFormat('en-NG').format(n);
+      }catch(e){
+        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
     }
 
-    // Random username color each session
-    const userColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+    /* ---------- AUTH STATE ---------- */
+    onAuthStateChanged(auth,async user=>{
+      if(user){
+        const userRef = doc(db,"users",user.uid);
+        const snap = await getDoc(userRef);
+        if(!snap.exists()){
+          await setDoc(userRef,{chatId:generateGuestName(),email:user.email,stars:0,cash:0,isAdmin:false});
+        }
+        currentUser = {uid:user.uid,...(await getDoc(userRef)).data()};
 
-    document.getElementById("sendBtn").addEventListener("click", () => {
-      const val = document.getElementById("msgInput").value;
-      if(val.trim() !== ""){
-        addMessage("You", val, userColor);
-        document.getElementById("msgInput").value = "";
+        // hide pre-login UI
+        document.getElementById("authBox").style.display = "none";
+        document.getElementById("guestMsg").style.display = "none";
+
+        // reveal chat/profile UI exactly as before
+        document.getElementById("sendArea").style.display="flex";
+        document.getElementById("profileBox").style.display="flex";
+        document.getElementById("redeemBtn").style.display="inline-block";
+        document.getElementById("profileName").innerText=currentUser.chatId;
+
+        // Live stars & cash
+        onSnapshot(userRef,docSnap=>{
+          const d = docSnap.data() || {};
+          currentUser.stars = d.stars || 0;
+          currentUser.cash = d.cash || 0;
+          // stars number + star emoji is handled in HTML; update numbers only
+          document.getElementById("starCount").innerText = currentUser.stars;
+          // cash: show formatted with commas
+          document.getElementById("cashCount").innerText = formatNumberWithCommas(currentUser.cash);
+        });
+
+        // Auto-increment stars every 10s (original behavior)
+        setInterval(async ()=>{
+          if(!currentUser) return;
+          const userDoc = doc(db,"users",currentUser.uid);
+          // optimistic local update (onSnapshot will reconcile)
+          await updateDoc(userDoc,{stars:(currentUser.stars||0)+1});
+        },10000);
+
+        // Live chat listing
+        const q = query(collection(db,"messages"), orderBy("timestamp"));
+        onSnapshot(q,snap=>{
+          const messagesDiv=document.getElementById("messages");
+          messagesDiv.innerHTML="";
+          snap.forEach(d=>{
+            const m=d.data();
+            const div=document.createElement("div");
+            div.classList.add("msg");
+            if(m.uid===currentUser.uid) div.classList.add("me");
+            const color=getColorForUser(m.chatId || "Guest");
+            div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId || "Guest"}:</span> <span class="content">${m.content}</span>`;
+            messagesDiv.appendChild(div);
+          });
+          messagesDiv.scrollTop=messagesDiv.scrollHeight;
+        });
+
+        // Chat ID popup (only once per session for new users)
+        if(!seenChatId && (!currentUser.chatId || currentUser.chatId==="")){
+          seenChatId = true;
+          setTimeout(()=> alert("Please set your Chat ID in profile (first time only)."), 5000);
+        }
+
+      } else {
+        currentUser=null;
+        document.getElementById("authBox").style.display="block";
+        document.getElementById("guestMsg").style.display="block";
+        document.getElementById("sendArea").style.display="none";
+        document.getElementById("redeemBtn").style.display="none";
+        document.getElementById("profileBox").style.display="none";
+        // reset displayed stats
+        document.getElementById("profileName").innerText=generateGuestName();
+        document.getElementById("starCount").innerText="0";
+        document.getElementById("cashCount").innerText="0";
+        // restart guest greeting typing
+        guestGreetingEl.textContent = "";
+        startGuestGreeting();
       }
     });
   </script>
