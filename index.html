@@ -1,201 +1,154 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Xixi — Money Talk 💸</title>
-<link rel="icon" href="data:," />
-<style>
-:root{
-  --bg:#000;
-  --card:#111;
-  --muted:#aaa;
-  --accent:#FF1493; /* deep pink */
-  --glass: rgba(255,255,255,0.03);
-}
-html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
-.app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;box-sizing:border-box;}
-.brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
-.room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
-#authBox{margin-bottom:12px;text-align:center;}
-#authBox button.btn{background:var(--accent);color:#000;border:0;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;}
-#center{flex:1;display:flex;flex-direction:column;gap:6px;}
-#videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;position:sticky;top:0;z-index:5;}
-#videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
-#guestMsg{font-size:16px;font-weight:600;margin:6px 0;color:var(--accent);text-align:center;}
-#messages{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
-.msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;}
-.msg.me{background:rgba(255,20,147,0.1);}
-.msg .meta{font-weight:700;font-size:14px;}
-.msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}
-.send-area{display:flex;align-items:center;gap:6px;background:var(--card);padding:6px 12px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:20px;}
-.send-area input{flex:1;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;}
-.send-area input::placeholder{color:var(--muted);}
-.send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
-.send-area button.btn{padding:8px 14px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;}
-.profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
-.profile .small{font-size:12px;color:var(--muted);}
-.stats{font-size:11px;font-weight:700;color:var(--accent);}
-.stats span{color:#fff;}
-.redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;text-decoration:none;margin-left:auto;}
-.admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
-.admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
-@keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Xixi — Money Talk 💸</title>
+  <link rel="icon" href="data:," />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #videoFrame {
+      flex: 0 0 40%;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #000;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .stat {
+      font-weight: bold;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    .msg {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .username {
+      font-weight: bold;
+    }
+    #inputBar {
+      display: flex;
+      border-top: 1px solid #333;
+    }
+    #inputBar input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+    }
+    #inputBar button {
+      padding: 10px;
+      background: #FF1493;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #signInArea {
+      text-align: center;
+      padding: 20px;
+    }
+    #signInArea h1 {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+    #redeemBtn {
+      background: #FF1493;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-<div class="app">
-  <div class="brand">乂丨乂丨</div>
-  <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
+  <div id="videoFrame">[ Video Frame Placeholder ]</div>
 
-  <!-- Center -->
-  <div id="center">
-    <div id="videoContainer">
-      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
-    </div>
-    <div id="guestMsg"></div>
-    <div id="authBox">
-      <button id="googleSignInBtn" class="btn">Sign in with Google</button>
-    </div>
-
-    <div id="messages"></div>
-
-    <div class="send-area" id="sendArea" style="display:none;">
-      <input type="text" id="messageInput" placeholder="Type your message..." />
-      <button id="sendBtn" class="btn">Send</button>
-    </div>
+  <div id="signInArea">
+    <h1 id="guestGreeting"></h1>
+    <button id="signInBtn">Sign in with Google</button>
   </div>
 
-  <!-- Profile -->
-  <div class="profile" id="profileBox">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <strong id="profileName">GUEST 0000</strong>
-        <div class="stats">STARS COLLECTED: <span id="starCount">0</span></div>
-        <div class="stats">CASH EARNED: <span id="cashCount">0</span></div>
-      </div>
-      <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
+  <div id="stats" style="display:none;">
+    <div class="stat">
+      STARS COLLECTED: <span id="starsCount">0</span> ⭐️
     </div>
-    <div class="admin-panel" id="adminPanel">
-      <button id="giveStarAdmin">Give Star</button>
-      <button id="whitelistEmailAdmin">Whitelist Email</button>
-      <button id="adminLogoutBtn">Logout</button>
+    <div class="stat">
+      CASH EARNED: ₦<span id="cashCount">0</span>
     </div>
+    <button id="redeemBtn">REDEEM</button>
   </div>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, orderBy, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <div id="chat" style="display:none;"></div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
-  authDomain: "metaverse-1010.firebaseapp.com",
-  projectId: "metaverse-1010",
-  storageBucket: "metaverse-1010.firebasestorage.app",
-  messagingSenderId: "1044064238233",
-  appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
-  measurementId: "G-S77BMC266C"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let currentUser = null;
-let userColors = {};
-let seenChatId = false;
+  <div id="inputBar" style="display:none;">
+    <input type="text" id="msgInput" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
 
-function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
-function getColorForUser(chatId){if(!userColors[chatId]){const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];userColors[chatId]=c[Math.floor(Math.random()*c.length)];}return userColors[chatId];}
-setPersistence(auth,browserLocalPersistence);
+  <script>
+    // Guest greeting with random number
+    const randomNum = Math.floor(Math.random() * 9000) + 1000;
+    document.getElementById("guestGreeting").textContent = "Hi, Guest" + randomNum;
 
-// Typing effect for Guest message
-function typeGuestMessage(msg){
-  const el=document.getElementById("guestMsg");
-  el.textContent="";
-  let i=0;
-  const interval=setInterval(()=>{
-    el.textContent=msg.slice(0,++i);
-    if(i===msg.length) clearInterval(interval);
-  },60);
-}
-typeGuestMessage("Hi, "+generateGuestName());
-
-document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
-  const provider=new GoogleAuthProvider();
-  await signInWithPopup(auth,provider);
-});
-
-document.getElementById("sendBtn").addEventListener("click",async()=>{
-  const msg=document.getElementById("messageInput").value.trim();
-  if(!msg) return;
-  await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp()});
-  document.getElementById("messageInput").value="";
-});
-
-onAuthStateChanged(auth,async user=>{
-  if(user){
-    const userRef=doc(db,"users",user.uid);
-    const snap=await getDoc(userRef);
-    if(!snap.exists()){
-      await setDoc(userRef,{chatId:generateGuestName(),email:user.email,stars:0,cash:0,isAdmin:false});
-    }
-    currentUser={uid:user.uid,...(await getDoc(userRef)).data()};
-
-    document.getElementById("authBox").style.display="none";
-    document.getElementById("guestMsg").style.display="none";
-    document.getElementById("sendArea").style.display="flex";
-    document.getElementById("profileBox").style.display="flex";
-    document.getElementById("redeemBtn").style.display="inline-block";
-    document.getElementById("profileName").innerText=currentUser.chatId;
-
-    onSnapshot(userRef,docSnap=>{
-      currentUser.stars=docSnap.data().stars;
-      currentUser.cash=docSnap.data().cash||0;
-      document.getElementById("starCount").innerText=currentUser.stars;
-      document.getElementById("cashCount").innerText=currentUser.cash;
+    // Handle sign in (mock)
+    document.getElementById("signInBtn").addEventListener("click", () => {
+      document.getElementById("signInArea").style.display = "none";
+      document.getElementById("stats").style.display = "flex";
+      document.getElementById("chat").style.display = "block";
+      document.getElementById("inputBar").style.display = "flex";
     });
 
-    // +1 star every 10s
-    setInterval(async()=>{
-      if(!currentUser) return;
-      const userDoc=doc(db,"users",currentUser.uid);
-      await updateDoc(userDoc,{stars:(currentUser.stars||0)+1});
-    },10000);
+    // Stars and Cash counters
+    let stars = 0;
+    setInterval(() => {
+      stars++;
+      document.getElementById("starsCount").textContent = stars;
+      document.getElementById("cashCount").textContent = stars * 10; // Example ₦10 per star
+    }, 10000);
 
-    // Messages
-    const q=collection(db,"messages");
-    onSnapshot(q,snap=>{
-      const messagesDiv=document.getElementById("messages");
-      messagesDiv.innerHTML="";
-      snap.forEach(d=>{
-        const m=d.data();
-        const div=document.createElement("div");
-        div.classList.add("msg");
-        if(m.uid===currentUser.uid) div.classList.add("me");
-        const color=getColorForUser(m.chatId);
-        div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId}:</span> <span class="content">${m.content}</span>`;
-        messagesDiv.appendChild(div);
-      });
-      messagesDiv.scrollTop=messagesDiv.scrollHeight;
-    });
-
-    // Chat ID popup (only once)
-    if(!seenChatId){
-      seenChatId=true;
-      setTimeout(()=>alert("Your Chat ID: "+currentUser.chatId),5000);
+    // Chat system (mock, aligned left compact)
+    function addMessage(username, text, color) {
+      const msg = document.createElement("div");
+      msg.className = "msg";
+      msg.innerHTML = `<span class="username" style="color:${color}">${username}:</span> <span>${text}</span>`;
+      document.getElementById("chat").appendChild(msg);
+      document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
     }
 
-  } else {
-    currentUser=null;
-    document.getElementById("authBox").style.display="block";
-    document.getElementById("guestMsg").style.display="block";
-    document.getElementById("sendArea").style.display="none";
-    document.getElementById("redeemBtn").style.display="none";
-    document.getElementById("profileBox").style.display="none";
-    typeGuestMessage("Hi, "+generateGuestName());
-  }
-});
-</script>
+    // Random username color each session
+    const userColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const val = document.getElementById("msgInput").value;
+      if(val.trim() !== ""){
+        addMessage("You", val, userColor);
+        document.getElementById("msgInput").value = "";
+      }
+    });
+  </script>
 </body>
 </html>
