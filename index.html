@@ -10,7 +10,8 @@
   --bg:#000;
   --card:#111;
   --muted:#aaa;
-  --accent:#FF1493; /* theme color */
+  --accent:#FF1493; /* deep pink */
+  --neon:#0cffd4; /* neon accent for input focus */
   --glass: rgba(255,255,255,0.03);
 }
 html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
@@ -37,7 +38,7 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
   background:#111;color:#fff;font-size:14px;outline:none;transition:0.2s all;
 }
 .send-area input::placeholder{color:var(--muted);}
-.send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
+.send-area input:focus{border-color:var(--neon);box-shadow:0 0 10px rgba(12,255,212,0.5);}
 .send-area button.btn{padding:8px 14px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;transition:0.2s all;}
 .send-area button.btn:hover{filter:brightness(1.1);}
 .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
@@ -66,7 +67,8 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
 .google-login-btn{
   display:block;margin:6px auto;padding:10px 20px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;
 }
-#guestIdInput{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);margin-bottom:6px;width:200px;text-align:center;}
+#guestIdInput{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);margin-bottom:6px;width:200px;text-align:center;transition:0.2s all;}
+#guestIdInput:focus{border-color:var(--neon);box-shadow:0 0 10px rgba(12,255,212,0.5);}
 #guestNameLabel{margin-bottom:6px;font-weight:600;}
 @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
 </style>
@@ -77,23 +79,19 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
   <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
 
   <div id="center">
-    <!-- Top video -->
     <div id="videoContainer">
       <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video" allowfullscreen></iframe>
     </div>
-    <!-- Bottom video -->
     <div id="videoContainer2">
       <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Video 2" allowfullscreen></iframe>
     </div>
 
-    <!-- Guest + Google sign-in -->
     <div id="guestSignIn" style="text-align:center;margin-top:12px;">
       <div id="guestNameLabel">Guest 0000</div>
       <input type="text" id="guestIdInput" placeholder="Choose your Chat ID" />
       <button id="googleSignInBtn" class="google-login-btn">Sign in with Google</button>
     </div>
 
-    <!-- Chat area -->
     <div id="messages"></div>
     <div class="send-area" id="sendArea">
       <input type="text" id="messageInput" placeholder="Type your message..." />
@@ -101,7 +99,6 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
     </div>
   </div>
 
-  <!-- Profile -->
   <div class="profile" id="profileSection">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div>
@@ -122,7 +119,6 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
   </div>
 </div>
 
-<!-- Star popup -->
 <div class="star-popup" id="starPopup">
   <div id="starText">You've just earned +1 star! ⭐</div>
   <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
@@ -130,82 +126,39 @@ html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Robot
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-  getAuth, setPersistence, browserLocalPersistence, 
-  onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { 
-  getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
-  authDomain: "metaverse-1010.firebaseapp.com",
-  projectId: "metaverse-1010",
-  storageBucket: "metaverse-1010.firebasestorage.app",
-  messagingSenderId: "1044064238233",
-  appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
-  measurementId: "G-S77BMC266C"
-};
-
+const firebaseConfig = { apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao", authDomain: "metaverse-1010.firebaseapp.com", projectId: "metaverse-1010", storageBucket: "metaverse-1010.firebasestorage.app", messagingSenderId: "1044064238233", appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608", measurementId: "G-S77BMC266C" };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUser = null;
 let userColors = {};
 
-// Guest name generator
-function generateGuestName(){
-  return "Guest "+Math.floor(1000+Math.random()*9000);
-}
-function getColorForUser(chatId){
-  if(!userColors[chatId]){
-    const colors = ["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
-    userColors[chatId] = colors[Math.floor(Math.random()*colors.length)];
-  }
-  return userColors[chatId];
-}
+function generateGuestName(){ return "Guest "+Math.floor(1000+Math.random()*9000);}
+function getColorForUser(chatId){ if(!userColors[chatId]){ const colors=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"]; userColors[chatId]=colors[Math.floor(Math.random()*colors.length)];} return userColors[chatId]; }
 
 setPersistence(auth,browserLocalPersistence).catch(console.error);
 
-// Chat send
-const messagesDiv = document.getElementById("messages");
-document.getElementById("sendBtn").addEventListener("click", async ()=>{
-  const msg = document.getElementById("messageInput").value.trim();
-  if(!msg) return;
-  await addDoc(collection(db,"messages"),{
-    uid:currentUser.uid,
-    chatId:currentUser.chatId,
-    content:msg,
-    timestamp:serverTimestamp()
-  });
-  document.getElementById("messageInput").value="";
-});
-
-// Update guest label dynamically
-const guestLabel = document.getElementById("guestNameLabel");
-guestLabel.innerText = generateGuestName();
-
-// Google Sign-In
+// Google sign-in with Chat ID
 document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
   let chatId = document.getElementById("guestIdInput").value.trim();
-  if(!chatId || chatId.length<4){ 
-    return alert("Chat ID must be at least 4 characters");
-  }
+  if(!chatId || chatId.length<4){ return alert("Chat ID must be at least 4 chars");}
   const usersRef = collection(db,"users");
   const chatQ = query(usersRef,where("chatId","==",chatId));
   const chatSnap = await getDocs(chatQ);
-  if(!chatSnap.empty) return alert("Chat ID already exists.");
-  
+  if(!chatSnap.empty) return alert("Chat ID already exists");
+
   const provider = new GoogleAuthProvider();
   const result = await signInWithPopup(auth,provider);
   const user = result.user;
-  
+
   await setDoc(doc(db,"users",user.uid),{
     chatId,email:user.email,stars:0,cash:0,isAdmin:user.email==="paygeda@gmail.com"
   });
-  
-  location.reload(); // reload to reflect chatId and stats
+
+  location.reload();
 });
 
 // Auth state change
@@ -214,30 +167,31 @@ onAuthStateChanged(auth, async user=>{
     const userRef = doc(db,"users",user.uid);
     const docSnap = await getDoc(userRef);
     if(!docSnap.exists()) return;
-    const userData = docSnap.data();
-    currentUser = {uid:user.uid,...userData};
-    
+    const data = docSnap.data();
+    currentUser = {uid:user.uid,...data};
+
     document.getElementById("guestSignIn").style.display="none";
     document.getElementById("messages").style.display="flex";
     document.getElementById("sendArea").style.display="flex";
     document.getElementById("profileSection").style.display="flex";
-    
+
     document.getElementById("profileName").innerText=currentUser.chatId;
     document.getElementById("uid").innerText=currentUser.uid;
 
     // Live stars & cash
     onSnapshot(userRef, docSnap=>{
-      const data = docSnap.data();
-      currentUser.stars = data.stars;
-      currentUser.cash = data.cash || 0;
-      document.getElementById("starCount").innerText = currentUser.stars;
-      document.getElementById("cashAmount").innerText = currentUser.cash;
+      const d = docSnap.data();
+      currentUser.stars = d.stars;
+      currentUser.cash = d.cash || 0;
+      document.getElementById("starCount").innerText=currentUser.stars;
+      document.getElementById("cashAmount").innerText=currentUser.cash;
     });
 
     // Live chat
     const messagesRef = collection(db,"messages");
     const q = query(messagesRef,orderBy("timestamp"));
     onSnapshot(q,snap=>{
+      const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML="";
       snap.forEach(doc=>{
         const m = doc.data();
@@ -252,12 +206,12 @@ onAuthStateChanged(auth, async user=>{
     });
 
   } else {
-    currentUser = null;
+    currentUser=null;
     document.getElementById("guestSignIn").style.display="block";
     document.getElementById("messages").style.display="none";
     document.getElementById("sendArea").style.display="none";
     document.getElementById("profileSection").style.display="none";
-    guestLabel.innerText = generateGuestName();
+    document.getElementById("guestNameLabel").innerText=generateGuestName();
   }
 });
 </script>
