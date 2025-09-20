@@ -10,7 +10,7 @@
       --bg:#000;
       --card:#111;
       --muted:#aaa;
-      --accent:#FF1493;
+      --accent:#FF1493; /* deep pink */
       --glass: rgba(255,255,255,0.03);
     }
     html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
@@ -24,11 +24,11 @@
     #videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
     #guestMsg{font-size:16px;font-weight:600;margin:6px 0;color:var(--accent);text-align:center;}
     #messages{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
-    .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;position:relative;}
+    .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;}
     .msg.me{background:rgba(255,20,147,0.1);}
     .msg .meta{font-weight:700;font-size:14px;}
     .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}
-    .msg .heart-btn{margin-left:auto;cursor:pointer;user-select:none;display:flex;align-items:center;gap:3px;font-size:12px;color:#FF1493;}
+
     .send-area{
       display:flex;
       align-items:center;
@@ -45,6 +45,7 @@
     .send-area input::placeholder{color:var(--muted);}
     .send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
     .send-area button.btn{padding:12px 20px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;}
+
     .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
     .profile .small{font-size:12px;color:var(--muted);}
     .stats{font-size:11px;font-weight:700;color:var(--accent);}
@@ -58,11 +59,35 @@
       padding:0;
     }
     .cash-earned .badge{display:none;}
+
     .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
     .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
     .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
+
+    /* animations */
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
+    @keyframes fadeColor {
+      0% { color: var(--accent); }
+      50% { color: #FF69B4; }
+      100% { color: var(--accent); }
+    }
+    .greeting-animate { animation: fadeColor 1s ease-in-out; }
+
+    /* heart like styling */
+    .heart-btn {
+      margin-left:auto;
+      cursor:pointer;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      gap:3px;
+      color:#FF1493;
+      font-weight:bold;
+      font-size:12px;
+      transition: transform 0.2s;
+    }
+    .heart-btn.filled { transform: scale(1.2); }
   </style>
 </head>
 <body>
@@ -139,6 +164,7 @@
       measurementId: "G-S77BMC266C",
       databaseURL: "https://metaverse-1010-default-rtdb.firebaseio.com/"
     };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -147,20 +173,47 @@
     let currentUser = null;
     let userColors = {};
 
-    function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
-    function getColorForUser(chatId){if(!userColors[chatId]){const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];userColors[chatId]=c[Math.floor(Math.random()*c.length)];}return userColors[chatId];}
+    function generateGuestName(){ return "GUEST " + Math.floor(1000+Math.random()*9000); }
+    function getColorForUser(chatId){
+      if(!userColors[chatId]){
+        const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
+        userColors[chatId]=c[Math.floor(Math.random()*c.length)];
+      }
+      return userColors[chatId];
+    }
+
     setPersistence(auth,browserLocalPersistence).catch(()=>{});
 
     const guestGreetingEl = document.getElementById('guestMsg');
+
     function startGuestGreeting(){
-      const text = "Hi, " + generateGuestName();
-      guestGreetingEl.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#FF1493';
+      const guestName = generateGuestName();
+      const greetings = [
+        `Hi, ${guestName}`,
+        `你好, ${guestName}`,
+        `Salut, ${guestName}`,
+        `Hola, ${guestName}`
+      ];
+
       guestGreetingEl.textContent = "";
-      let i = 0;
-      const t = setInterval(()=>{
-        guestGreetingEl.textContent += text[i++] || "";
-        if(i > text.length) clearInterval(t);
-      }, 60);
+      let index = 0;
+
+      function typeGreeting(){
+        const text = greetings[index];
+        guestGreetingEl.textContent = "";
+        guestGreetingEl.classList.remove('greeting-animate');
+        let i = 0;
+        const t = setInterval(()=>{
+          guestGreetingEl.textContent += text[i++] || "";
+          if(i > text.length){
+            clearInterval(t);
+            guestGreetingEl.classList.add('greeting-animate');
+            index = (index + 1) % greetings.length;
+            setTimeout(typeGreeting, 800);
+          }
+        }, 60);
+      }
+      typeGreeting();
     }
     startGuestGreeting();
 
@@ -198,7 +251,6 @@
       }
     }
 
-    // presence
     const onlineCountEl = document.getElementById("onlineCount");
     const presenceRef = ref(rtdb,"presence");
     function setupPresence(user){
@@ -241,32 +293,46 @@
           await updateDoc(userRef,{stars:(currentUser.stars||0)+1});
         },10000);
 
-        // optimized messages with hearts
         const q=query(collection(db,"messages"),orderBy("timestamp"));
         onSnapshot(q,snap=>{
           const messagesDiv=document.getElementById("messages");
+          messagesDiv.innerHTML="";
           snap.docChanges().forEach(change=>{
             if(change.type==='added'){
-              const m=change.doc.data();
-              const div=document.createElement("div");
+              const m = change.doc.data();
+              const div = document.createElement("div");
               div.classList.add("msg");
               if(m.uid===currentUser.uid) div.classList.add("me");
               const color=getColorForUser(m.chatId||"Guest");
-              let innerContent='';
+
+              let innerContent = '';
               if(m.type==="image"){
-                innerContent=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <img src="${m.content}" style="max-width:200px;border-radius:8px;">`;
+                innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
+                                <img src="${m.content}" style="max-width:200px;border-radius:8px;">`;
               } else if(m.type==="video"){
-                innerContent=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <video controls style="max-width:200px;border-radius:8px;"><source src="${m.content}" type="video/mp4"></video>`;
+                innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
+                                <video controls style="max-width:200px;border-radius:8px;">
+                                  <source src="${m.content}" type="video/mp4">
+                                </video>`;
               } else {
-                innerContent=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
+                innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
+                                <span class="content">${m.content}</span>`;
               }
-              div.innerHTML=innerContent+`<span class="heart-btn">❤️ <span class="like-count" style="display:${m.likes>0?'inline':'none'}">${m.likes||0}</span></span>`;
-              
-              // heart click event
-              const heartBtn=div.querySelector('.heart-btn');
-              heartBtn.addEventListener('click',async()=>{
-                const msgRef=doc(db,'messages',change.doc.id);
-                await updateDoc(msgRef,{likes:(m.likes||0)+1});
+
+              div.innerHTML = innerContent + `
+                <span class="heart-btn">${m.likes > 0 ? '♥' : '♡'} 
+                  <span class="like-count" style="display:${m.likes>0?'inline':'none'}">${m.likes||0}</span>
+                </span>`;
+
+              // Heart click event
+              const heartBtn = div.querySelector('.heart-btn');
+              heartBtn.addEventListener('click', async () => {
+                const msgRef = doc(db, 'messages', change.doc.id);
+                const liked = heartBtn.textContent.includes('♡');
+                const newCount = liked ? (m.likes || 0) + 1 : (m.likes || 0) - 1;
+                heartBtn.innerHTML = (liked ? '♥' : '♡') + ` <span class="like-count" style="display:${newCount>0?'inline':'none'}">${newCount}</span>`;
+                await updateDoc(msgRef, { likes: newCount });
+                m.likes = newCount;
               });
 
               messagesDiv.appendChild(div);
