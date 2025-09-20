@@ -12,6 +12,7 @@
       --muted:#aaa;
       --accent:#FF1493; /* deep pink */
       --glass: rgba(255,255,255,0.03);
+      --gold: #FFD166;
     }
     html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
     .app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;box-sizing:border-box;}
@@ -24,11 +25,14 @@
     #videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
     #guestMsg{font-size:16px;font-weight:600;margin:6px 0;color:var(--accent);text-align:center;}
     #messages{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
-    .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;}
-    .msg.me{background:rgba(255,20,147,0.1);}
-    .msg .meta{font-weight:700;font-size:14px;}
-    .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}
-
+    .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:8px;align-items:flex-start;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;position:relative;}
+    .msg.me{background:rgba(255,20,147,0.06);}
+    .msg .meta{font-weight:700;font-size:14px;min-width:80px;display:inline-block;}
+    .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;word-break:break-word;flex:1;}
+    .msg .content img{max-width:320px;border-radius:8px;display:block;margin-top:6px;}
+    .msg .content video{max-width:360px;border-radius:8px;display:block;margin-top:6px;}
+    .msg .admin-actions{position:absolute;right:8px;top:8px;display:flex;gap:6px;}
+    .msg .admin-actions button{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:4px 6px;border-radius:6px;cursor:pointer;font-size:11px;}
     /* 🔥 ONLY THE SEND AREA (chat bar) WAS CHANGED — everything else is restored to your original reference */
     .send-area{
       display:flex;
@@ -44,7 +48,7 @@
     }
     .send-area input{flex:1;padding:12px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;}
     .send-area input::placeholder{color:var(--muted);}
-    .send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
+    .send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.18);}
     .send-area button.btn{padding:12px 20px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;}
 
     .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
@@ -55,17 +59,23 @@
     .profile-card{background:var(--glass);padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
     .badge{
       font-size:12px;
-      margin-left:3px;
+      margin-left:6px;
       background:none;   /* remove pink backdrop */
       color:#fff;        /* same color as numbers */
       padding:0;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
+    .badge svg{width:14px;height:14px;display:inline-block;}
     .cash-earned .badge{display:none;} /* hide trailing ₦ */
 
     .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
-    .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
-    .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
+    .admin-panel{display:none;margin-top:8px;padding:8px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.12);width:220px;}
+    .admin-panel button{display:block;margin:6px 0;padding:8px 10px;background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;text-align:center;width:100%;}
+    .admin-panel button:hover{opacity:0.92;}
+    .ghost{background:none;border:0;color:var(--muted);cursor:pointer;}
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
   </style>
 </head>
@@ -99,21 +109,29 @@
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <strong id="profileName">GUEST 0000</strong>
-            <div class="stats">STARS COLLECTED: 
-              <span id="starCount">0</span> 
-              <span class="badge">⭐</span>
+            <div class="stats">STARS COLLECTED:
+              <span id="starCount">0</span>
+              <span class="badge" id="starBadge" title="Gold star">
+                <!-- gold star SVG -->
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="none">
+                  <path d="M12 2l2.9 6.9 7.1.6-5.4 4.7 1.7 7-6.3-3.9-6.3 3.9 1.7-7-5.4-4.7 7.1-.6z" fill="#FFD700"/>
+                </svg>
+              </span>
             </div>
-            <div class="stats cash-earned">CASH EARNED: 
-              <span id="cashCount">₦0</span> 
+            <div class="stats cash-earned">CASH EARNED:
+              <span id="cashCount">₦0</span>
               <span class="badge">₦</span>
             </div>
           </div>
           <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
         </div>
       </div>
+
       <div class="admin-panel" id="adminPanel">
         <button id="giveStarAdmin">Give Star</button>
         <button id="whitelistEmailAdmin">Whitelist Email</button>
+        <button id="uploadImageAdmin">Upload Image</button>
+        <button id="uploadVideoAdmin">Upload Video</button>
         <button id="adminLogoutBtn">Logout</button>
       </div>
     </div>
@@ -121,14 +139,25 @@
 
   <!-- Star popup -->
   <div class="star-popup" id="starPopup">
-    <div id="starText">You've just earned +1 star! ⭐</div>
+    <div id="starText">
+      <!-- inline gold star + text -->
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" fill="#FFD700" style="width:14px;height:14px;vertical-align:middle;margin-right:6px;"><path d="M12 2l2.9 6.9 7.1.6-5.4 4.7 1.7 7-6.3-3.9-6.3 3.9 1.7-7-5.4-4.7 7.1-.6z"/></svg>
+      You've just earned +1 star!
+    </div>
     <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
   </div>
 
+  <!-- Hidden file inputs for admin uploads -->
+  <input type="file" id="imageInput" accept="image/*" style="display:none" />
+  <input type="file" id="videoInput" accept="video/*" style="display:none" />
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, orderBy, serverTimestamp, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, orderBy, serverTimestamp, onSnapshot, query, where, getDocs, deleteDoc, increment
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
@@ -142,6 +171,8 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
+
     let currentUser = null;
     let userColors = {};
 
@@ -169,12 +200,19 @@
       try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
     });
 
-    // Send message
+    // Send message (text)
     document.getElementById("sendBtn").addEventListener("click",async()=>{
       const msg=document.getElementById("messageInput").value.trim();
       if(!msg || !currentUser) return;
-      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp()});
-      document.getElementById("messageInput").value="";
+      try{
+        await addDoc(collection(db,"messages"),{
+          uid:currentUser.uid,
+          chatId:currentUser.chatId||"",
+          content:msg,
+          timestamp:serverTimestamp()
+        });
+        document.getElementById("messageInput").value="";
+      }catch(e){console.error(e);}
     });
 
     function formatNumberWithCommas(n){
@@ -200,6 +238,104 @@
       }
     }
 
+    // Upload helper (returns download URL)
+    function uploadMedia(file, folder){
+      return new Promise((resolve,reject)=>{
+        const path = `${folder}/${Date.now()}_${file.name}`;
+        const sRef = storageRef(storage, path);
+        const task = uploadBytesResumable(sRef, file);
+        task.on('state_changed',
+          (snap)=>{/*progress available if needed*/},
+          (err)=>{console.error(err); reject(err);},
+          async ()=>{
+            try{
+              const url = await getDownloadURL(task.snapshot.ref);
+              resolve(url);
+            }catch(err){reject(err);}
+          }
+        );
+      });
+    }
+
+    // Admin actions
+    document.getElementById('giveStarAdmin').addEventListener('click', async ()=>{
+      const identifier = prompt("Enter user's Chat ID or email to give +1 star:");
+      if(!identifier) return;
+      try{
+        const usersCol = collection(db,'users');
+        let q1 = query(usersCol, where('chatId','==',identifier));
+        let snap1 = await getDocs(q1);
+        if(!snap1.empty){
+          const uDoc = snap1.docs[0];
+          await updateDoc(doc(db,'users',uDoc.id), { stars: increment(1) });
+          alert('Gave +1 star to ' + (uDoc.data().chatId || uDoc.data().email));
+          return;
+        }
+        let q2 = query(usersCol, where('email','==',identifier));
+        let snap2 = await getDocs(q2);
+        if(!snap2.empty){
+          const uDoc = snap2.docs[0];
+          await updateDoc(doc(db,'users',uDoc.id), { stars: increment(1) });
+          alert('Gave +1 star to ' + (uDoc.data().chatId || uDoc.data().email));
+          return;
+        }
+        alert('User not found.');
+      }catch(e){console.error(e); alert('Error giving star');}
+    });
+
+    document.getElementById('whitelistEmailAdmin').addEventListener('click', async ()=>{
+      const email = prompt("Enter email to whitelist:");
+      if(!email) return;
+      try{
+        await setDoc(doc(db,'whitelist', email), { email, addedBy: currentUser.uid, timestamp: serverTimestamp() });
+        alert(email + ' added to whitelist.');
+      }catch(e){console.error(e); alert('Error whitelisting email');}
+    });
+
+    // Upload image/video - wire hidden inputs
+    const imageInput = document.getElementById('imageInput');
+    const videoInput = document.getElementById('videoInput');
+
+    document.getElementById('uploadImageAdmin').addEventListener('click', ()=> imageInput.click());
+    document.getElementById('uploadVideoAdmin').addEventListener('click', ()=> videoInput.click());
+
+    imageInput.addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0];
+      if(!file) return;
+      try{
+        const url = await uploadMedia(file, 'uploads/images');
+        await addDoc(collection(db,'messages'), {
+          uid: currentUser.uid,
+          chatId: currentUser.chatId || "",
+          mediaUrl: url,
+          mediaType: 'image',
+          timestamp: serverTimestamp()
+        });
+        imageInput.value = "";
+      }catch(err){console.error(err); alert('Upload failed');}
+    });
+
+    videoInput.addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0];
+      if(!file) return;
+      try{
+        const url = await uploadMedia(file, 'uploads/videos');
+        await addDoc(collection(db,'messages'), {
+          uid: currentUser.uid,
+          chatId: currentUser.chatId || "",
+          mediaUrl: url,
+          mediaType: 'video',
+          timestamp: serverTimestamp()
+        });
+        videoInput.value = "";
+      }catch(err){console.error(err); alert('Upload failed');}
+    });
+
+    document.getElementById('adminLogoutBtn').addEventListener('click', async ()=> {
+      try{ await signOut(auth); }catch(e){console.error(e);}
+    });
+
+    // Live auth state / chat rendering
     onAuthStateChanged(auth,async user=>{
       if(user){
         const userRef = doc(db,"users",user.uid);
@@ -207,7 +343,9 @@
         if(!snap.exists()){
           await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false});
         }
-        currentUser = {uid:user.uid,...(await getDoc(userRef)).data()};
+        // fetch current data
+        const userSnap = await getDoc(userRef);
+        currentUser = {uid:user.uid,...(userSnap.data()||{})};
 
         document.getElementById("authBox").style.display="none";
         document.getElementById("guestMsg").style.display="none";
@@ -216,42 +354,110 @@
         document.getElementById("redeemBtn").style.display="inline-block";
         document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
 
-        // Live stats
+        // Show admin panel if flagged
+        document.getElementById("adminPanel").style.display = currentUser.isAdmin ? 'block' : 'none';
+
+        // Live stats (watch user's own doc)
         onSnapshot(userRef,docSnap=>{
-          const d=docSnap.data()||{};
-          currentUser.stars=d.stars||0;
-          currentUser.cash=d.cash||0;
-          document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
-          document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
+          const d = docSnap.data() || {};
+          currentUser.stars = d.stars || 0;
+          currentUser.cash = d.cash || 0;
+          currentUser.isAdmin = d.isAdmin || false;
+          document.getElementById("starCount").innerText = formatNumberWithCommas(currentUser.stars);
+          document.getElementById("cashCount").innerText = "₦" + formatNumberWithCommas(currentUser.cash);
+          // ensure admin panel visibility updates if admin flag changes server-side
+          document.getElementById("adminPanel").style.display = currentUser.isAdmin ? 'block' : 'none';
         });
 
-        // Auto-increment stars
+        // Auto-increment stars (use server increment to avoid race)
         setInterval(async()=>{
           if(!currentUser) return;
-          await updateDoc(userRef,{stars:(currentUser.stars||0)+1});
+          try{
+            await updateDoc(userRef, { stars: increment(1) });
+          }catch(e){/* ignore transient errors */ console.error(e);}
         },10000);
 
-        // Live chat
-        const q=query(collection(db,"messages"),orderBy("timestamp"));
-        onSnapshot(q,snap=>{
-          const messagesDiv=document.getElementById("messages");
-          messagesDiv.innerHTML="";
-          snap.forEach(d=>{
-            const m=d.data();
-            const div=document.createElement("div");
-            div.classList.add("msg");
-            if(m.uid===currentUser.uid) div.classList.add("me");
-            const color=getColorForUser(m.chatId||"Guest");
-            div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
-            messagesDiv.appendChild(div);
+        // Live chat: render messages using DOM nodes (safe)
+        const q = query(collection(db,"messages"), orderBy("timestamp"));
+        onSnapshot(q, snap=>{
+          const messagesDiv = document.getElementById("messages");
+          messagesDiv.innerHTML = "";
+          snap.forEach(docSnap=>{
+            const m = docSnap.data() || {};
+            const id = docSnap.id;
+            const wrapper = document.createElement("div");
+            wrapper.className = "msg";
+            if(currentUser && m.uid === currentUser.uid) wrapper.classList.add("me");
+
+            const meta = document.createElement("span");
+            meta.className = "meta";
+            meta.style.color = getColorForUser(m.chatId || "Guest");
+            meta.textContent = (m.chatId || "Guest") + ":";
+
+            const content = document.createElement("div");
+            content.className = "content";
+
+            if(m.content){
+              const p = document.createElement("div");
+              p.textContent = m.content;
+              content.appendChild(p);
+            }
+
+            if(m.mediaUrl){
+              if(m.mediaType === 'image'){
+                const img = document.createElement("img");
+                img.src = m.mediaUrl;
+                img.alt = 'shared image';
+                content.appendChild(img);
+              }else if(m.mediaType === 'video'){
+                const vid = document.createElement("video");
+                vid.src = m.mediaUrl;
+                vid.controls = true;
+                vid.preload = 'metadata';
+                content.appendChild(vid);
+              }else{
+                // fallback: show as link
+                const a = document.createElement("a");
+                a.href = m.mediaUrl;
+                a.target = "_blank";
+                a.rel = "noreferrer";
+                a.textContent = "Open attachment";
+                content.appendChild(a);
+              }
+            }
+
+            wrapper.appendChild(meta);
+            wrapper.appendChild(content);
+
+            // admin-only per-message actions (delete)
+            if(currentUser && currentUser.isAdmin){
+              const adminActions = document.createElement("div");
+              adminActions.className = "admin-actions";
+              const delBtn = document.createElement("button");
+              delBtn.textContent = "Delete";
+              delBtn.title = "Delete message";
+              delBtn.addEventListener("click", async ()=>{
+                try{
+                  if(confirm("Delete this message? This cannot be undone.")){
+                    await deleteDoc(doc(db,"messages", id));
+                  }
+                }catch(err){console.error(err); alert('Delete failed');}
+              });
+              adminActions.appendChild(delBtn);
+              wrapper.appendChild(adminActions);
+            }
+
+            messagesDiv.appendChild(wrapper);
           });
-          messagesDiv.scrollTop=messagesDiv.scrollHeight;
+          // auto scroll
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
         // One-time Chat ID prompt
         showChatIdPromptIfNeeded(user);
 
       } else {
+        // logged out
         currentUser=null;
         document.getElementById("authBox").style.display="block";
         document.getElementById("guestMsg").style.display="block";
