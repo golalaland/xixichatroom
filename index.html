@@ -10,7 +10,7 @@
       --bg:#000;
       --card:#111;
       --muted:#aaa;
-      --accent:#FF1493; /* deep pink */
+      --accent:#FF1493;
       --glass: rgba(255,255,255,0.03);
     }
     html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
@@ -28,8 +28,6 @@
     .msg.me{background:rgba(255,20,147,0.1);}
     .msg .meta{font-weight:700;font-size:14px;}
     .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;}
-    .heart-btn{cursor:pointer;margin-left:6px;font-size:14px;user-select:none;}
-    .heart-btn:hover{color:red;}
     .send-area{
       display:flex;
       align-items:center;
@@ -46,21 +44,13 @@
     .send-area input::placeholder{color:var(--muted);}
     .send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
     .send-area button.btn{padding:12px 20px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;}
-
     .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
     .profile .small{font-size:12px;color:var(--muted);}
     .stats{font-size:11px;font-weight:700;color:var(--accent);}
     .stats span{font-weight:400;color:#fff;font-family:monospace;font-size:13px;}
     .profile-card{background:var(--glass);padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
-    .badge{
-      font-size:12px;
-      margin-left:3px;
-      background:none;
-      color:#fff;
-      padding:0;
-    }
+    .badge{font-size:12px;margin-left:3px;background:none;color:#fff;padding:0;}
     .cash-earned .badge{display:none;}
-
     .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
     .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
@@ -98,7 +88,7 @@
       <div class="profile-card">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div>
-            <strong id="profileName">GUEST 0000</strong>
+            <strong id="profileName">GUEST</strong>
             <div class="stats">STARS COLLECTED: 
               <span id="starCount">0</span> 
               <span class="badge">⭐</span>
@@ -150,43 +140,30 @@
     let currentUser = null;
     let userColors = {};
 
-    function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
-    function getColorForUser(chatId){
-      if(!userColors[chatId]){
-        const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
-        userColors[chatId]=c[Math.floor(Math.random()*c.length)];
-      }
-      return userColors[chatId];
+    // --- NICKNAME SYSTEM ---
+    const nicknames = [
+      "Skywalker","Neo","Pixel","Bolt","Nova","Luna","Cosmo","Rocket","Shadow","Echo",
+      "Blaze","Storm","Jinx","Frost","Orion","Viper","Raven","Sonic","Flash","Zen"
+    ];
+    function getRandomNickname(){
+      const name = nicknames[Math.floor(Math.random()*nicknames.length)];
+      return name + Math.floor(10 + Math.random()*90); // small number appended for uniqueness
     }
+
+    function getColorForUser(chatId){if(!userColors[chatId]){const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];userColors[chatId]=c[Math.floor(Math.random()*c.length)];}return userColors[chatId];}
+
     setPersistence(auth,browserLocalPersistence).catch(()=>{});
 
     const guestGreetingEl = document.getElementById('guestMsg');
     function startGuestGreeting(){
-      const guestName = generateGuestName();
-      const greetings = [
-        `Hi, ${guestName}`,
-        `你好, ${guestName}`,
-        `Salut, ${guestName}`,
-        `Hola, ${guestName}`
-      ];
-
+      const text = "Hi, " + getRandomNickname() + "!";
+      guestGreetingEl.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#FF1493';
       guestGreetingEl.textContent = "";
-      let index = 0;
-
-      function typeGreeting(){
-        const text = greetings[index];
-        guestGreetingEl.textContent = "";
-        let i = 0;
-        const t = setInterval(()=>{
-          guestGreetingEl.textContent += text[i++] || "";
-          if(i > text.length){
-            clearInterval(t);
-            index = (index + 1) % greetings.length;
-            setTimeout(typeGreeting, 2500); // slower, readable loop
-          }
-        }, 60);
-      }
-      typeGreeting();
+      let i = 0;
+      const t = setInterval(()=>{
+        guestGreetingEl.textContent += text[i++] || "";
+        if(i > text.length) clearInterval(t);
+      }, 120); // slower sequence
     }
     startGuestGreeting();
 
@@ -198,7 +175,7 @@
     document.getElementById("sendBtn").addEventListener("click",async()=>{
       const msg=document.getElementById("messageInput").value.trim();
       if(!msg || !currentUser) return;
-      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp(),type:"text",likes:0});
+      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp(),type:"text"});
       document.getElementById("messageInput").value="";
     });
 
@@ -224,6 +201,7 @@
       }
     }
 
+    // --- presence ---
     const onlineCountEl = document.getElementById("onlineCount");
     const presenceRef = ref(rtdb,"presence");
     function setupPresence(user){
@@ -251,7 +229,7 @@
         document.getElementById("sendArea").style.display="flex";
         document.getElementById("profileBox").style.display="flex";
         document.getElementById("redeemBtn").style.display="inline-block";
-        document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
+        document.getElementById("profileName").innerText=currentUser.chatId||getRandomNickname();
 
         onSnapshot(userRef,docSnap=>{
           const d=docSnap.data()||{};
@@ -269,51 +247,23 @@
         const q=query(collection(db,"messages"),orderBy("timestamp"));
         onSnapshot(q,snap=>{
           const messagesDiv=document.getElementById("messages");
-          snap.docChanges().forEach(change=>{
-            if(change.type==='added'){
-              const m = change.doc.data();
-              const div = document.createElement("div");
-              div.classList.add("msg");
-              if(m.uid===currentUser.uid) div.classList.add("me");
-              const color=getColorForUser(m.chatId||"Guest");
-
-              let innerContent = '';
-              if(m.type==="image"){
-                innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
-                                <img src="${m.content}" style="max-width:200px;border-radius:8px;">`;
-              } else if(m.type==="video"){
-                innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
-                                <video controls style="max-width:200px;border-radius:8px;">
-                                  <source src="${m.content}" type="video/mp4">
-                                </video>`;
-              } else {
-                innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
-                                <span class="content">${m.content}</span>`;
-              }
-
-              div.innerHTML = innerContent + `
-                <span class="heart-btn">${m.likes > 0 ? '♥' : '♡'} 
-                  <span class="like-count" style="display:${m.likes>0?'inline':'none'}">${m.likes||0}</span>
-                </span>`;
-
-              const heartBtn = div.querySelector('.heart-btn');
-              heartBtn.addEventListener('click', async () => {
-                const liked = heartBtn.textContent.includes('♡');
-                let newCount = liked ? (m.likes || 0) + 1 : (m.likes || 0) - 1;
-                
-                // Instant DOM update
-                heartBtn.innerHTML = (liked ? '♥' : '♡') + ` <span class="like-count" style="display:${newCount>0?'inline':'none'}">${newCount}</span>`;
-                m.likes = newCount;
-
-                // Update Firestore in background
-                const msgRef = doc(db, 'messages', change.doc.id);
-                updateDoc(msgRef, { likes: newCount }).catch(console.error);
-              });
-
-              messagesDiv.appendChild(div);
-              messagesDiv.scrollTop=messagesDiv.scrollHeight;
+          messagesDiv.innerHTML="";
+          snap.forEach(d=>{
+            const m=d.data();
+            const div=document.createElement("div");
+            div.classList.add("msg");
+            if(m.uid===currentUser.uid) div.classList.add("me");
+            const color=getColorForUser(m.chatId||"Guest");
+            if(m.type==="image"){
+              div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <img src="${m.content}" style="max-width:200px;border-radius:8px;">`;
+            } else if(m.type==="video"){
+              div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <video controls style="max-width:200px;border-radius:8px;"><source src="${m.content}" type="video/mp4"></video>`;
+            } else {
+              div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
             }
+            messagesDiv.appendChild(div);
           });
+          messagesDiv.scrollTop=messagesDiv.scrollHeight;
         });
 
         showChatIdPromptIfNeeded(user);
@@ -325,7 +275,7 @@
         document.getElementById("sendArea").style.display="none";
         document.getElementById("redeemBtn").style.display="none";
         document.getElementById("profileBox").style.display="none";
-        document.getElementById("profileName").innerText=generateGuestName();
+        document.getElementById("profileName").innerText=getRandomNickname();
         document.getElementById("starCount").innerText="0";
         document.getElementById("cashCount").innerText="₦0";
         guestGreetingEl.textContent = "";
