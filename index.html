@@ -1,4 +1,11 @@
-<style>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Xixi — Money Talk 💸</title>
+  <link rel="icon" href="data:," />
+  <style>
     :root{
       --bg:#000;
       --card:#111;
@@ -43,31 +50,221 @@
     .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
     .profile .small{font-size:12px;color:var(--muted);}
     .stats{font-size:11px;font-weight:700;color:var(--accent);}
-    .stats span{
-      font-weight:400;
-      color:#fff;
-      font-family:monospace;
-      font-size:15px; /* ⬅️ bumped up from 13px */
-    }
+    .stats span{font-weight:400;color:#fff;font-family:monospace;font-size:13px;}
     /* NEW additions in original reference */
     .profile-card{background:var(--glass);padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
-    .badge{background:var(--accent);color:#000;font-size:10px;padding:2px 6px;border-radius:6px;margin-left:6px;}
+    .badge{
+      font-size:12px;
+      margin-left:3px;
+      background:none;   /* remove pink backdrop */
+      color:#fff;        /* same color as numbers */
+      padding:0;
+    }
+    .cash-earned .badge{display:none;} /* hide trailing ₦ */
+
     .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
     .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
     .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="brand">乂丨乂丨</div>
+    <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
 
-    /* ✅ OVERRIDES — star + naira badge fixes */
-    .stats .badge {
-      background: none !important;
-      color: #fff !important;    /* match number */
-      font-size: 14px !important;
-      padding: 0 !important;
-      margin-left: 2px !important;
+    <div id="center">
+      <div id="videoContainer">
+        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+      </div>
+
+      <!-- greeting + sign-in under video -->
+      <div id="guestMsg"></div>
+      <div id="authBox">
+        <button id="googleSignInBtn" class="btn">Sign in with Google</button>
+      </div>
+
+      <div id="messages"></div>
+
+      <div class="send-area" id="sendArea" style="display:none;">
+        <input type="text" id="messageInput" placeholder="Type your message..." />
+        <button id="sendBtn" class="btn">Send</button>
+      </div>
+    </div>
+
+    <!-- Profile (hidden until login) -->
+    <div class="profile" id="profileBox">
+      <div class="profile-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <strong id="profileName">GUEST 0000</strong>
+            <div class="stats">STARS COLLECTED: 
+              <span id="starCount">0</span> 
+              <span class="badge">⭐</span>
+            </div>
+            <div class="stats cash-earned">CASH EARNED: 
+              <span id="cashCount">₦0</span> 
+              <span class="badge">₦</span>
+            </div>
+          </div>
+          <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
+        </div>
+      </div>
+      <div class="admin-panel" id="adminPanel">
+        <button id="giveStarAdmin">Give Star</button>
+        <button id="whitelistEmailAdmin">Whitelist Email</button>
+        <button id="adminLogoutBtn">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Star popup -->
+  <div class="star-popup" id="starPopup">
+    <div id="starText">You've just earned +1 star! ⭐</div>
+    <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, orderBy, serverTimestamp, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
+      authDomain: "metaverse-1010.firebaseapp.com",
+      projectId: "metaverse-1010",
+      storageBucket: "metaverse-1010.firebasestorage.app",
+      messagingSenderId: "1044064238233",
+      appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+      measurementId: "G-S77BMC266C"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let currentUser = null;
+    let userColors = {};
+
+    function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
+    function getColorForUser(chatId){if(!userColors[chatId]){const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];userColors[chatId]=c[Math.floor(Math.random()*c.length)];}return userColors[chatId];}
+    setPersistence(auth,browserLocalPersistence).catch(()=>{});
+
+    // Guest greeting typing
+    const guestGreetingEl = document.getElementById('guestMsg');
+    function startGuestGreeting(){
+      const text = "Hi, " + generateGuestName();
+      guestGreetingEl.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#FF1493';
+      guestGreetingEl.textContent = "";
+      let i = 0;
+      const t = setInterval(()=>{
+        guestGreetingEl.textContent += text[i++] || "";
+        if(i > text.length) clearInterval(t);
+      }, 60);
     }
-    /* hide only the trailing ₦ badge on cash earned */
-    .stats:nth-of-type(2) .badge {
-      display: none !important;
+    startGuestGreeting();
+
+    // Sign in
+    document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
+      const provider=new GoogleAuthProvider();
+      try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
+    });
+
+    // Send message
+    document.getElementById("sendBtn").addEventListener("click",async()=>{
+      const msg=document.getElementById("messageInput").value.trim();
+      if(!msg || !currentUser) return;
+      await addDoc(collection(db,"messages"),{uid:currentUser.uid,chatId:currentUser.chatId,content:msg,timestamp:serverTimestamp()});
+      document.getElementById("messageInput").value="";
+    });
+
+    function formatNumberWithCommas(n){
+      try{return new Intl.NumberFormat('en-NG').format(n);}
+      catch(e){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");}
     }
-</style>
+
+    // One-time Chat ID prompt
+    async function showChatIdPromptIfNeeded(user){
+      const userRef = doc(db,"users",user.uid);
+      const snap = await getDoc(userRef);
+      if(snap.exists()){
+        const data = snap.data();
+        if(!data.chatId){
+          setTimeout(async ()=>{
+            const newId = prompt("Choose your Chat ID:");
+            if(newId && newId.trim()!==""){
+              await updateDoc(userRef,{chatId:newId.trim()});
+              location.reload();
+            }
+          },5000);
+        }
+      }
+    }
+
+    onAuthStateChanged(auth,async user=>{
+      if(user){
+        const userRef = doc(db,"users",user.uid);
+        const snap = await getDoc(userRef);
+        if(!snap.exists()){
+          await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false});
+        }
+        currentUser = {uid:user.uid,...(await getDoc(userRef)).data()};
+
+        document.getElementById("authBox").style.display="none";
+        document.getElementById("guestMsg").style.display="none";
+        document.getElementById("sendArea").style.display="flex";
+        document.getElementById("profileBox").style.display="flex";
+        document.getElementById("redeemBtn").style.display="inline-block";
+        document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
+
+        // Live stats
+        onSnapshot(userRef,docSnap=>{
+          const d=docSnap.data()||{};
+          currentUser.stars=d.stars||0;
+          currentUser.cash=d.cash||0;
+          document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
+          document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
+        });
+
+        // Auto-increment stars
+        setInterval(async()=>{
+          if(!currentUser) return;
+          await updateDoc(userRef,{stars:(currentUser.stars||0)+1});
+        },10000);
+
+        // Live chat
+        const q=query(collection(db,"messages"),orderBy("timestamp"));
+        onSnapshot(q,snap=>{
+          const messagesDiv=document.getElementById("messages");
+          messagesDiv.innerHTML="";
+          snap.forEach(d=>{
+            const m=d.data();
+            const div=document.createElement("div");
+            div.classList.add("msg");
+            if(m.uid===currentUser.uid) div.classList.add("me");
+            const color=getColorForUser(m.chatId||"Guest");
+            div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
+            messagesDiv.appendChild(div);
+          });
+          messagesDiv.scrollTop=messagesDiv.scrollHeight;
+        });
+
+        // One-time Chat ID prompt
+        showChatIdPromptIfNeeded(user);
+
+      } else {
+        currentUser=null;
+        document.getElementById("authBox").style.display="block";
+        document.getElementById("guestMsg").style.display="block";
+        document.getElementById("sendArea").style.display="none";
+        document.getElementById("redeemBtn").style.display="none";
+        document.getElementById("profileBox").style.display="none";
+        document.getElementById("profileName").innerText=generateGuestName();
+        document.getElementById("starCount").innerText="0";
+        document.getElementById("cashCount").innerText="₦0";
+        guestGreetingEl.textContent = "";
+        startGuestGreeting();
+      }
+    });
+  </script>
+</body>
+</html>
