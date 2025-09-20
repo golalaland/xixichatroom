@@ -11,123 +11,157 @@
       --card:#111;
       --muted:#aaa;
       --accent:#FF1493;
-      --glass: rgba(255,255,255,0.03);
     }
-    html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
-    .app{display:flex;flex-direction:column;height:100%;gap:12px;padding:12px;box-sizing:border-box;}
-    .brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
-    .room-desc{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px;}
-    #authBox{text-align:center;}
-    #authBox button.btn{background:var(--accent);color:#000;border:0;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;}
-    #center{flex:1;display:flex;flex-direction:column;gap:6px;}
-    #videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;position:sticky;top:0;z-index:5;}
-    #videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
-    #guestMsg{font-size:16px;font-weight:600;margin:6px 0;color:var(--accent);text-align:center;}
-    #messages{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
-    .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;}
-    .msg.me{background:rgba(255,20,147,0.1);}
-    .msg .meta{font-weight:700;font-size:14px;}
-    .msg .content{font-size:12px;color:#fff;white-space:pre-wrap;word-break:break-word;}
-    .msg img{max-width:200px;border-radius:8px;}
-    .msg video{max-width:220px;border-radius:8px;}
-
-    .send-area{display:flex;align-items:center;gap:6px;background:var(--card);padding:14px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:20px;}
-    .send-area input{flex:1;padding:12px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:14px;outline:none;}
-    .send-area input::placeholder{color:var(--muted);}
-    .send-area input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(255,20,147,0.4);}
-    .send-area button.btn{padding:12px 20px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;}
-
-    .profile{display:none;flex-direction:column;gap:4px;margin-top:12px;}
-    .profile .stats{font-size:11px;font-weight:700;color:var(--accent);}
-    .profile .stats span{font-weight:400;color:#fff;font-family:monospace;font-size:13px;}
-    .profile-card{background:var(--glass);padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
-    .badge{font-size:12px;margin-left:3px;background:none;color:#fff;}
-    .cash-earned .badge{display:none;}
-
-    .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:12px;white-space:nowrap;text-align:center;max-width:90%;}
-    .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
-    .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
-    .admin-panel button{display:block;width:100%;margin:4px 0;padding:6px 10px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;text-align:center;}
-    .admin-panel button:hover{opacity:0.85;}
-
-    @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
+    body{
+      margin:0;
+      font-family:system-ui,sans-serif;
+      background:var(--bg);
+      color:#fff;
+    }
+    .app{
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+    }
+    .header{
+      padding:12px;
+      background:var(--card);
+      border-bottom:1px solid #222;
+      text-align:center;
+    }
+    .brand{
+      font-weight:bold;
+      font-size:18px;
+    }
+    .room-desc{
+      font-size:13px;
+      color:var(--muted);
+    }
+    .online-count{
+      font-size:13px;
+      color:var(--accent);
+      margin-top:4px;
+    }
+    .stats{
+      display:flex;
+      justify-content:center;
+      gap:20px;
+      padding:8px 0;
+      font-size:13px;
+    }
+    .count{
+      font-family:monospace;
+      font-size:14px;
+      font-weight:bold;
+      color:#fff;
+    }
+    .chat{
+      flex:1;
+      overflow-y:auto;
+      padding:10px;
+    }
+    .msg{
+      margin:6px 0;
+      padding:8px 12px;
+      border-radius:12px;
+      background:var(--card);
+      font-size:14px;
+      max-width:80%;
+      word-wrap:break-word;
+    }
+    .msg.admin{
+      border:1px solid var(--accent);
+    }
+    .input-area{
+      display:flex;
+      gap:6px;
+      padding:10px;
+      border-top:1px solid #222;
+      background:var(--card);
+    }
+    .input-area input{
+      flex:1;
+      padding:8px;
+      border:none;
+      border-radius:8px;
+      background:#222;
+      color:#fff;
+      font-size:14px;
+    }
+    .input-area button{
+      background:var(--accent);
+      border:none;
+      border-radius:8px;
+      padding:8px 12px;
+      color:#fff;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    .admin-tools{
+      display:flex;
+      gap:6px;
+      padding:6px 10px;
+      background:#111;
+      border-top:1px solid #222;
+    }
+    .admin-tools button{
+      flex:1;
+      font-size:13px;
+      padding:6px;
+      border:none;
+      border-radius:6px;
+      background:var(--accent);
+      color:#fff;
+      cursor:pointer;
+    }
+    img.chat-media, video.chat-media{
+      max-width:200px;
+      max-height:200px;
+      border-radius:8px;
+      display:block;
+      margin-top:6px;
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="brand">乂丨乂丨</div>
-    <div class="room-desc">
-      Money Talk 💸 — Chat. Own your vibe.
-      <span id="onlineCount" style="color:var(--accent);font-weight:600;margin-left:6px;"></span>
+    <div class="header">
+      <div class="brand">乂丨乂丨</div>
+      <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
+      <div id="onlineCount" class="online-count">(0 online)</div>
     </div>
-
-    <div id="center">
-      <div id="videoContainer">
-        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
-      </div>
-
-      <div id="guestMsg"></div>
-      <div id="authBox">
-        <button id="googleSignInBtn" class="btn">Sign in with Google</button>
-      </div>
-
-      <div id="messages"></div>
-
-      <div class="send-area" id="sendArea" style="display:none;">
-        <input type="text" id="messageInput" placeholder="Type your message..." />
-        <button id="sendBtn" class="btn">Send</button>
-      </div>
+    <div class="stats">
+      <div>⭐ <span id="starCount" class="count">0</span></div>
+      <div>₦ <span id="cashCount" class="count">0</span></div>
     </div>
-
-    <div class="profile" id="profileBox">
-      <div class="profile-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <strong id="profileName">GUEST 0000</strong>
-            <div class="stats">STARS COLLECTED: 
-              <span id="starCount">0</span> 
-              <span class="badge">⭐</span>
-            </div>
-            <div class="stats cash-earned">CASH EARNED: 
-              <span id="cashCount">₦0</span> 
-              <span class="badge">₦</span>
-            </div>
-          </div>
-          <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
-        </div>
-      </div>
-      <div class="admin-panel" id="adminPanel">
-        <button id="giveStarAdmin">Give Star</button>
-        <button id="whitelistEmailAdmin">Whitelist Email</button>
-        <button id="uploadImageAdmin">Upload Image</button>
-        <button id="uploadVideoAdmin">Upload Video</button>
-        <button id="adminLogoutBtn">Logout</button>
-      </div>
+    <div id="chat" class="chat"></div>
+    <div class="input-area">
+      <input id="msgInput" placeholder="Type message..." />
+      <button id="sendBtn">Send</button>
+    </div>
+    <div class="admin-tools" id="adminTools" style="display:none;">
+      <button id="imgBtn">Upload Image</button>
+      <button id="vidBtn">Upload Video</button>
+      <button id="logoutBtn">Logout</button>
     </div>
   </div>
 
-  <div class="star-popup" id="starPopup">
-    <div id="starText">You've just earned +1 star! ⭐</div>
-    <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
-  </div>
-
-  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
     import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
-    import { getDatabase, ref, set, onDisconnect, onValue, serverTimestamp as rtdbTs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import { getDatabase, ref, onDisconnect, onValue, set, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    // Your Firebase config here
+    // 🔥 Your Firebase config
     const firebaseConfig = {
       apiKey: "YOUR_KEY",
-      authDomain: "YOUR_APP.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID",
-      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com/"
+      authDomain: "YOUR_DOMAIN",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_SENDER",
+      appId: "YOUR_APPID",
+      databaseURL: "YOUR_DBURL"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -136,123 +170,137 @@
     const storage = getStorage(app);
     const rtdb = getDatabase(app);
 
-    const provider = new GoogleAuthProvider();
-    const messagesRef = collection(db, "messages");
-
-    const messagesEl = document.getElementById("messages");
-    const onlineCountEl = document.getElementById("onlineCount");
-    const sendArea = document.getElementById("sendArea");
-    const messageInput = document.getElementById("messageInput");
+    const chatEl = document.getElementById("chat");
+    const msgInput = document.getElementById("msgInput");
     const sendBtn = document.getElementById("sendBtn");
+    const adminTools = document.getElementById("adminTools");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const imgBtn = document.getElementById("imgBtn");
+    const vidBtn = document.getElementById("vidBtn");
+    const onlineCountEl = document.getElementById("onlineCount");
 
     let currentUser = null;
 
-    // Sign in
-    document.getElementById("googleSignInBtn").onclick = () => signInWithPopup(auth, provider);
-
-    // Auth state
-    onAuthStateChanged(auth, user => {
-      if(user){
+    // Listen for auth changes
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
         currentUser = user;
-        document.getElementById("authBox").style.display="none";
-        sendArea.style.display="flex";
-        document.getElementById("profileBox").style.display="flex";
-        document.getElementById("profileName").textContent = user.displayName || user.email;
-
-        // Presence tracking
-        const presenceRef = ref(rtdb, "presence/" + user.uid);
-        set(presenceRef, { uid: user.uid, email: user.email, ts: rtdbTs() });
-        onDisconnect(presenceRef).remove();
-        const allPresence = ref(rtdb, "presence");
-        onValue(allPresence, snap=>{
-          const data = snap.val();
-          const count = data ? Object.keys(data).length : 0;
-          onlineCountEl.textContent = `(${count} online)`;
-        });
-
+        if (user.email && user.email.includes("admin")) {
+          adminTools.style.display = "flex";
+        }
+        setupPresence(user);
+        loadChat();
       } else {
-        currentUser=null;
-        document.getElementById("authBox").style.display="block";
-        sendArea.style.display="none";
-        document.getElementById("profileBox").style.display="none";
-        onlineCountEl.textContent="";
+        signInWithPopup(auth, new GoogleAuthProvider());
       }
     });
 
-    // Send message
-    async function sendMessage(type="text", content){
-      if(!currentUser) return;
-      await addDoc(messagesRef, {
-        uid: currentUser.uid,
-        name: currentUser.displayName || "Guest",
-        type,
-        content,
-        ts: serverTimestamp()
+    // Presence tracking
+    function setupPresence(user) {
+      const presenceRef = ref(rtdb, "presence/" + user.uid);
+      set(presenceRef, { uid: user.uid, email: user.email || null, ts: rtdbTimestamp() });
+      onDisconnect(presenceRef).remove();
+
+      const allPresenceRef = ref(rtdb, "presence");
+      onValue(allPresenceRef, snap => {
+        const data = snap.val();
+        const count = data ? Object.keys(data).length : 0;
+        onlineCountEl.textContent = `(${count} online)`;
       });
     }
-    sendBtn.onclick = ()=> {
-      if(messageInput.value.trim()){
-        sendMessage("text", messageInput.value.trim());
-        messageInput.value="";
-      }
-    };
 
-    // Listen messages
-    const q = query(messagesRef, orderBy("ts"));
-    onSnapshot(q, snap=>{
-      messagesEl.innerHTML="";
-      snap.forEach(doc=>{
-        const m=doc.data();
-        const div=document.createElement("div");
-        div.className="msg"+(m.uid===currentUser?.uid?" me":"");
-        div.innerHTML = `<div>
-          <div class="meta">${m.name}</div>
-          <div class="content">${
-            m.type==="image"?`<img src="${m.content}" />`:
-            m.type==="video"?`<video src="${m.content}" controls></video>`:
-            m.content
-          }</div>
-        </div>`;
-        messagesEl.appendChild(div);
+    // Load chat
+    function loadChat() {
+      const q = query(collection(db, "messages"), orderBy("ts"));
+      onSnapshot(q, snapshot => {
+        chatEl.innerHTML = "";
+        snapshot.forEach(doc => {
+          const msg = doc.data();
+          const div = document.createElement("div");
+          div.className = "msg" + (msg.admin ? " admin" : "");
+          if (msg.text) div.textContent = msg.text;
+          if (msg.mediaUrl) {
+            if (msg.mediaType === "image") {
+              const img = document.createElement("img");
+              img.src = msg.mediaUrl;
+              img.className = "chat-media";
+              div.appendChild(img);
+            } else if (msg.mediaType === "video") {
+              const vid = document.createElement("video");
+              vid.src = msg.mediaUrl;
+              vid.className = "chat-media";
+              vid.controls = true;
+              div.appendChild(vid);
+            }
+          }
+          chatEl.appendChild(div);
+          chatEl.scrollTop = chatEl.scrollHeight;
+        });
       });
-      messagesEl.scrollTop=messagesEl.scrollHeight;
-    });
+    }
 
-    // Admin actions
-    document.getElementById("uploadImageAdmin").onclick= async ()=>{
-      if(!currentUser) return;
-      const input=document.createElement("input");
-      input.type="file"; input.accept="image/*";
-      input.onchange=async e=>{
-        const file=e.target.files[0];
-        if(file){
-          const path=`uploads/${currentUser.uid}/${Date.now()}_${file.name}`;
-          const refFile=sRef(storage,path);
-          await uploadBytes(refFile,file);
-          const url=await getDownloadURL(refFile);
-          sendMessage("image", url);
+    // Send text
+    sendBtn.onclick = async () => {
+      if (!msgInput.value.trim()) return;
+      await addDoc(collection(db, "messages"), {
+        text: msgInput.value,
+        ts: serverTimestamp(),
+        uid: currentUser.uid,
+        admin: currentUser.email && currentUser.email.includes("admin")
+      });
+      msgInput.value = "";
+    };
+
+    // Upload helper
+    async function uploadFile(file, type) {
+      const fileRef = sRef(storage, `${type}s/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      return await getDownloadURL(fileRef);
+    }
+
+    // Upload image
+    imgBtn.onclick = async () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const url = await uploadFile(file, "image");
+          await addDoc(collection(db, "messages"), {
+            mediaUrl: url,
+            mediaType: "image",
+            ts: serverTimestamp(),
+            uid: currentUser.uid,
+            admin: true
+          });
         }
       };
       input.click();
     };
 
-    document.getElementById("uploadVideoAdmin").onclick= async ()=>{
-      if(!currentUser) return;
-      const input=document.createElement("input");
-      input.type="file"; input.accept="video/*";
-      input.onchange=async e=>{
-        const file=e.target.files[0];
-        if(file){
-          const path=`uploads/${currentUser.uid}/${Date.now()}_${file.name}`;
-          const refFile=sRef(storage,path);
-          await uploadBytes(refFile,file);
-          const url=await getDownloadURL(refFile);
-          sendMessage("video", url);
+    // Upload video
+    vidBtn.onclick = async () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "video/*";
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const url = await uploadFile(file, "video");
+          await addDoc(collection(db, "messages"), {
+            mediaUrl: url,
+            mediaType: "video",
+            ts: serverTimestamp(),
+            uid: currentUser.uid,
+            admin: true
+          });
         }
       };
       input.click();
     };
 
+    logoutBtn.onclick = () => signOut(auth);
   </script>
 </body>
 </html>
