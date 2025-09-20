@@ -13,8 +13,24 @@
       --accent:#FF1493; /* deep pink */
       --glass: rgba(255,255,255,0.03);
     }
-    html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
-    
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      color:#fff;
+      background:var(--bg);
+    }
+
+    /* New wrapper to center the scaled app */
+    .scale-wrap{
+      min-height:100vh;
+      display:flex;
+      justify-content:center; /* center horizontally */
+      align-items:flex-start; /* keep content starting from top */
+      box-sizing:border-box;
+      padding-top:18px; /* small top gap so sticky top items don't butt against edge */
+    }
+
     /* MAIN APP */
     .app{
       display:flex;
@@ -24,7 +40,13 @@
       padding:12px;
       box-sizing:border-box;
       transform: scale(0.75);
-      transform-origin: top left;
+      -webkit-transform: scale(0.75);
+      transform-origin: top center; /* center horizontally when scaled */
+      -webkit-transform-origin: top center;
+      will-change: transform;
+      pointer-events: auto; /* ensure clicks work */
+      width:100%; /* keep full width behavior inside wrapper */
+      max-width:1100px; /* optional - keeps content from growing too wide on large screens */
     }
 
     .brand{font-weight:700;font-size:28px;color:var(--accent);text-align:center;}
@@ -58,51 +80,57 @@
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="brand">乂丨乂丨</div>
-    <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
+  <!-- scale-wrap centers the scaled .app without breaking events -->
+  <div class="scale-wrap">
+    <div class="app">
+      <div class="brand">乂丨乂丨</div>
+      <div class="room-desc">Money Talk 💸 — Chat. Own your vibe.</div>
 
-    <div id="center">
-      <div id="videoContainer">
-        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
-      </div>
+      <div id="center">
+        <div id="videoContainer">
+          <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
+        </div>
 
-      <div id="guestMsg"></div>
-      <div id="authBox">
-        <button id="googleSignInBtn" class="btn">Sign in with Google</button>
-      </div>
+        <!-- greeting + sign-in under video -->
+        <div id="guestMsg"></div>
+        <div id="authBox">
+          <button id="googleSignInBtn" class="btn">Sign in with Google</button>
+        </div>
 
-      <div id="messages"></div>
+        <div id="messages"></div>
 
-      <div class="send-area" id="sendArea" style="display:none;">
-        <input type="text" id="messageInput" placeholder="Type your message..." />
-        <button id="sendBtn" class="btn">Send</button>
-      </div>
-    </div>
-
-    <div class="profile" id="profileBox">
-      <div class="profile-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <strong id="profileName">GUEST 0000</strong>
-            <div class="stats">STARS COLLECTED: 
-              <span id="starCount">0</span><span style="margin-left:2px;">⭐</span>
-            </div>
-            <div class="stats">CASH EARNED: 
-              <span id="cashCount">₦0</span>
-            </div>
-          </div>
-          <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
+        <div class="send-area" id="sendArea" style="display:none;">
+          <input type="text" id="messageInput" placeholder="Type your message..." />
+          <button id="sendBtn" class="btn">Send</button>
         </div>
       </div>
-      <div class="admin-panel" id="adminPanel">
-        <button id="giveStarAdmin">Give Star</button>
-        <button id="whitelistEmailAdmin">Whitelist Email</button>
-        <button id="adminLogoutBtn">Logout</button>
+
+      <!-- Profile (hidden until login) -->
+      <div class="profile" id="profileBox">
+        <div class="profile-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <strong id="profileName">GUEST 0000</strong>
+              <div class="stats">STARS COLLECTED: 
+                <span id="starCount">0</span><span style="margin-left:2px;">⭐</span>
+              </div>
+              <div class="stats">CASH EARNED: 
+                <span id="cashCount">₦0</span>
+              </div>
+            </div>
+            <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
+          </div>
+        </div>
+        <div class="admin-panel" id="adminPanel">
+          <button id="giveStarAdmin">Give Star</button>
+          <button id="whitelistEmailAdmin">Whitelist Email</button>
+          <button id="adminLogoutBtn">Logout</button>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Star popup -->
   <div class="star-popup" id="starPopup">
     <div id="starText">You've just earned +1 star! ⭐</div>
     <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
@@ -132,6 +160,7 @@
     function getColorForUser(chatId){if(!userColors[chatId]){const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];userColors[chatId]=c[Math.floor(Math.random()*c.length)];}return userColors[chatId];}
     setPersistence(auth,browserLocalPersistence).catch(()=>{});
 
+    // Guest greeting typing
     const guestGreetingEl = document.getElementById('guestMsg');
     function startGuestGreeting(){
       const text = "Hi, " + generateGuestName();
@@ -145,11 +174,13 @@
     }
     startGuestGreeting();
 
+    // Sign in
     document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
       const provider=new GoogleAuthProvider();
       try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
     });
 
+    // Send message
     document.getElementById("sendBtn").addEventListener("click",async()=>{
       const msg=document.getElementById("messageInput").value.trim();
       if(!msg || !currentUser) return;
@@ -162,6 +193,7 @@
       catch(e){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");}
     }
 
+    // One-time Chat ID prompt
     async function showChatIdPromptIfNeeded(user){
       const userRef = doc(db,"users",user.uid);
       const snap = await getDoc(userRef);
@@ -182,4 +214,68 @@
     onAuthStateChanged(auth,async user=>{
       if(user){
         const userRef = doc(db,"users",user.uid);
-        const snap = await getDoc(userRef
+        const snap = await getDoc(userRef);
+        if(!snap.exists()){
+          await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false});
+        }
+        currentUser = {uid:user.uid,...(await getDoc(userRef)).data()};
+
+        document.getElementById("authBox").style.display="none";
+        document.getElementById("guestMsg").style.display="none";
+        document.getElementById("sendArea").style.display="flex";
+        document.getElementById("profileBox").style.display="flex";
+        document.getElementById("redeemBtn").style.display="inline-block";
+        document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
+
+        // Live stats
+        onSnapshot(userRef,docSnap=>{
+          const d=docSnap.data()||{};
+          currentUser.stars=d.stars||0;
+          currentUser.cash=d.cash||0;
+          document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
+          document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
+        });
+
+        // Auto-increment stars
+        setInterval(async()=>{
+          if(!currentUser) return;
+          await updateDoc(userRef,{stars:(currentUser.stars||0)+1});
+        },10000);
+
+        // Live chat
+        const q=query(collection(db,"messages"),orderBy("timestamp"));
+        onSnapshot(q,snap=>{
+          const messagesDiv=document.getElementById("messages");
+          messagesDiv.innerHTML="";
+          snap.forEach(d=>{
+            const m=d.data();
+            const div=document.createElement("div");
+            div.classList.add("msg");
+            if(m.uid===currentUser.uid) div.classList.add("me");
+            const color=getColorForUser(m.chatId||"Guest");
+            div.innerHTML=`<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
+            messagesDiv.appendChild(div);
+          });
+          messagesDiv.scrollTop=messagesDiv.scrollHeight;
+        });
+
+        // One-time Chat ID prompt
+        showChatIdPromptIfNeeded(user);
+
+      } else {
+        currentUser=null;
+        document.getElementById("authBox").style.display="block";
+        document.getElementById("guestMsg").style.display="block";
+        document.getElementById("sendArea").style.display="none";
+        document.getElementById("redeemBtn").style.display="none";
+        document.getElementById("profileBox").style.display="none";
+        document.getElementById("profileName").innerText=generateGuestName();
+        document.getElementById("starCount").innerText="0";
+        document.getElementById("cashCount").innerText="₦0";
+        guestGreetingEl.textContent = "";
+        startGuestGreeting();
+      }
+    });
+  </script>
+</body>
+</html>
