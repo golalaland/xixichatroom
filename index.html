@@ -22,7 +22,7 @@
     #center{flex:1;display:flex;flex-direction:column;gap:6px;}
     #videoContainer{width:100%;aspect-ratio:16/9;background:#111;border-radius:12px;overflow:hidden;position:sticky;top:0;z-index:5;}
     #videoContainer iframe{width:100%;height:100%;border:0;border-radius:12px;}
-    #guestMsg{font-size:20px;font-weight:700;margin:12px 0;color:var(--accent);text-align:center;transition: opacity 0.8s;}
+    #guestMsg{font-size:20px;font-weight:700;margin:12px 0;color:var(--accent);text-align:center;transition: opacity 0.8s, transform 0.8s;}
     #messages{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;border-radius:8px;background:#000;margin-bottom:6px;}
     .msg{padding:6px 8px;border-radius:10px;background:var(--glass);max-width:85%;display:flex;gap:6px;align-items:center;opacity:0;animation:fadeInUp 0.25s forwards;justify-content:flex-start;}
     .msg.me{background:rgba(255,20,147,0.1);}
@@ -66,6 +66,11 @@
     .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);}
     .admin-panel button{margin-right:6px;padding:4px 8px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;}
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
+    @keyframes floatText{
+      0% {transform: translateY(0) scale(1);}
+      50% {transform: translateY(-5px) scale(1.02);}
+      100% {transform: translateY(0) scale(1);}
+    }
   </style>
 </head>
 <body>
@@ -160,41 +165,34 @@
     }
     setPersistence(auth,browserLocalPersistence).catch(()=>{});
 
-    // -----------------------------
-    // Apple-style Hello Greetings
     const guestGreetingEl = document.getElementById('guestMsg');
-    function startHelloGreetings() {
+    function startGuestGreeting(){
+      const guestName = generateGuestName();
       const greetings = [
-        { text: "Hello", font: "'Segoe UI', sans-serif" },
-        { text: "你好", font: "'Noto Sans SC', sans-serif" },
-        { text: "Bonjour", font: "'Helvetica Neue', sans-serif" },
-        { text: "Hola", font: "'Arial', sans-serif" },
-        { text: "Ciao", font: "'Georgia', serif" },
-        { text: "مرحبا", font: "'Amiri', serif" },
-        { text: "Привет", font: "'Roboto', sans-serif" },
-        { text: "Ola", font: "'Trebuchet MS', sans-serif" }
+        {text:`Hello, ${guestName}`, font:`'Segoe UI',Arial,sans-serif`},
+        {text:`Hola, ${guestName}`, font:`'Courier New',monospace`},
+        {text:`你好, ${guestName}`, font:`'Noto Sans SC',sans-serif`},
+        {text:`Salut, ${guestName}`, font:`'Georgia',serif`}
       ];
 
       let index = 0;
 
-      function showGreeting() {
-        const { text, font } = greetings[index];
-        guestGreetingEl.style.fontFamily = font;
-        guestGreetingEl.style.opacity = 0;
-        guestGreetingEl.textContent = text;
-        // Fade in
-        setTimeout(()=>guestGreetingEl.style.opacity=1,50);
-        // Fade out after 2s
+      function showNextGreeting(){
+        const {text,font} = greetings[index];
+        guestGreetingEl.style.opacity=0;
+        guestGreetingEl.style.fontFamily=font;
         setTimeout(()=>{
-          guestGreetingEl.style.opacity=0;
-          index = (index+1)%greetings.length;
-          setTimeout(showGreeting,800);
-        },2000);
+          guestGreetingEl.textContent=text;
+          guestGreetingEl.style.opacity=1;
+          guestGreetingEl.style.animation='floatText 2.5s ease-in-out infinite';
+        },300);
+
+        index = (index + 1) % greetings.length;
+        setTimeout(showNextGreeting,4000);
       }
-      showGreeting();
+      showNextGreeting();
     }
-    startHelloGreetings();
-    // -----------------------------
+    startGuestGreeting();
 
     document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
       const provider=new GoogleAuthProvider();
@@ -334,6 +332,8 @@
         document.getElementById("profileName").innerText=generateGuestName();
         document.getElementById("starCount").innerText="0";
         document.getElementById("cashCount").innerText="₦0";
+        guestGreetingEl.textContent = "";
+        startGuestGreeting();
       }
     });
   </script>
