@@ -140,17 +140,27 @@
 
   setPersistence(auth, browserLocalPersistence).catch(()=>{});
 
-  // HELLO fade
-  const guestGreetingEl = document.getElementById('guestMsg');
-  const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
-  let greetIndex=0;
-  function showGreeting(){
-    guestGreetingEl.textContent=greetings[greetIndex];
-    guestGreetingEl.style.animation="fadeInOut 3s linear";
-    greetIndex=(greetIndex+1)%greetings.length;
-    setTimeout(showGreeting,3000);
+// HELLO greeting (only on start page before login)
+const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
+let greetIndex = 0;
+let greetingInterval = null;
+
+function startGreeting() {
+  if (currentUser) {
+    guestGreetingEl.style.display = "none"; // Hide after login
+    clearInterval(greetingInterval);
+    return;
   }
-  showGreeting();
+  guestGreetingEl.textContent = greetings[greetIndex];
+  guestGreetingEl.style.animation = "fadeInOut 3s linear";
+  greetIndex = (greetIndex + 1) % greetings.length;
+}
+
+// Start loop only if user not logged in yet
+if (!currentUser) {
+  startGreeting(); // Show first greeting
+  greetingInterval = setInterval(startGreeting, 3000);
+}
 
   // AUTH
   document.getElementById("googleSignInBtn").addEventListener("click", async () => {
