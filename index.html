@@ -140,29 +140,29 @@
 
   setPersistence(auth, browserLocalPersistence).catch(()=>{});
 
-// HELLO greeting (only on start page before login)
-const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
-let greetIndex = 0;
-let greetingInterval = null;
+  // --- HELLO Greeting Only on Start Page ---
+  const guestGreetingEl = document.getElementById('guestMsg');
+  const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
+  let greetIndex = 0;
+  let greetingInterval = null;
 
-function startGreeting() {
-  if (currentUser) {
-    guestGreetingEl.style.display = "none"; // Hide after login
-    clearInterval(greetingInterval);
-    return;
+  function startGreeting() {
+    if (currentUser) {
+      guestGreetingEl.style.display = "none";
+      clearInterval(greetingInterval);
+      return;
+    }
+    guestGreetingEl.textContent = greetings[greetIndex];
+    guestGreetingEl.style.animation = "fadeInOut 3s linear";
+    greetIndex = (greetIndex + 1) % greetings.length;
   }
-  guestGreetingEl.textContent = greetings[greetIndex];
-  guestGreetingEl.style.animation = "fadeInOut 3s linear";
-  greetIndex = (greetIndex + 1) % greetings.length;
-}
 
-// Start loop only if user not logged in yet
-if (!currentUser) {
-  startGreeting(); // Show first greeting
-  greetingInterval = setInterval(startGreeting, 3000);
-}
+  if (!currentUser) {
+    startGreeting();
+    greetingInterval = setInterval(startGreeting, 3000);
+  }
 
-  // AUTH
+  // --- AUTH ---
   document.getElementById("googleSignInBtn").addEventListener("click", async () => {
     const provider = new GoogleAuthProvider();
     try { await signInWithPopup(auth, provider); } catch(e){ console.error(e); }
@@ -192,6 +192,10 @@ if (!currentUser) {
   // AUTH STATE
   onAuthStateChanged(auth, async user => {
     if(user){
+      // Stop greeting after login
+      guestGreetingEl.style.display = "none";
+      if(greetingInterval) clearInterval(greetingInterval);
+
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
       if(!snap.exists()){
@@ -200,7 +204,6 @@ if (!currentUser) {
 
       let userData = (await getDoc(userRef)).data();
 
-      // --- PROMPT FOR CHAT ID IMMEDIATELY ---
       if(!userData.chatId || userData.chatId.trim() === ""){
         let newId = "";
         while(!newId){
@@ -212,7 +215,6 @@ if (!currentUser) {
 
       currentUser = { uid: user.uid, ...userData };
 
-      // SHOW UI AFTER CHAT ID IS SET
       document.getElementById("authBox").style.display="none";
       document.getElementById("sendArea").style.display="flex";
       document.getElementById("profileBox").style.display="flex";
@@ -220,7 +222,6 @@ if (!currentUser) {
 
       setupPresence(user);
 
-      // WATCH USER CHANGES
       onSnapshot(userRef, docSnap => {
         const d = docSnap.data() || {};
         currentUser.stars = d.stars || 0;
@@ -246,7 +247,7 @@ if (!currentUser) {
         }
       },10000);
 
-      // --- MESSAGES LISTENER ---
+      // MESSAGES LISTENER
       const q = collection(db,"messages");
       onSnapshot(q, snap=>{
         const messagesDiv = document.getElementById("messages");
