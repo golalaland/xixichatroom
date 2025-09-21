@@ -15,26 +15,8 @@
     }
     html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
     
-    #appWrapper{
-      transform: scale(1);
-      transform-origin: top center;
-      width: 100%;
-      height: 100%;
-      display:flex;
-      justify-content:center;
-    }
-
-    .app{
-      display:flex;
-      flex-direction:column;
-      height:100%;
-      gap:10px;
-      padding:10px;
-      box-sizing:border-box;
-      width:100%;
-      max-width:480px;
-    }
-
+    #appWrapper{transform: scale(1); transform-origin: top center; width: 100%; height: 100%; display:flex; justify-content:center;}
+    .app{display:flex; flex-direction:column; height:100%; gap:10px; padding:10px; box-sizing:border-box; width:100%; max-width:480px;}
     .brand{font-weight:700;font-size:24px;color:var(--accent);text-align:center;}
     .room-desc{font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;}
     #authBox{margin-bottom:10px;text-align:center;}
@@ -48,18 +30,7 @@
     .msg.me{background:rgba(255,20,147,0.1);}
     .msg .meta{font-weight:700;font-size:13px;}
     .msg .content{font-size:11px;color:#fff;white-space:pre-wrap;}
-    .send-area{
-      display:flex;
-      align-items:center;
-      gap:4px;
-      background:var(--card);
-      padding:10px;
-      position:sticky;
-      bottom:0;
-      z-index:10;
-      border-top:1px solid rgba(255,255,255,0.05);
-      border-radius:18px;
-    }
+    .send-area{display:flex; align-items:center; gap:4px; background:var(--card); padding:10px; position:sticky; bottom:0; z-index:10; border-top:1px solid rgba(255,255,255,0.05); border-radius:18px;}
     .send-area input{flex:1;padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:13px;outline:none;}
     .send-area input::placeholder{color:var(--muted);}
     .send-area input:focus{border-color:var(--accent);box-shadow:0 0 8px rgba(255,20,147,0.4);}
@@ -72,13 +43,10 @@
     .profile-card{background:var(--glass);padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);}
     .badge{font-size:11px;margin-left:3px;background:none;color:#fff;padding:0;}
     .cash-earned .badge{display:none;}
-
     .star-popup{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:var(--card);padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);display:none;z-index:1000;color:var(--accent);font-size:11px;white-space:nowrap;text-align:center;max-width:90%;}
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:10px;padding:3px 6px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
 
-    .admin-panel{
-      margin-top:6px;padding:5px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);flex-direction:column;gap:3px;overflow-y:auto;max-height:200px;
-    }
+    .admin-panel{display:none;margin-top:6px;padding:5px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);flex-direction:column;gap:3px;overflow-y:auto;max-height:200px;}
     .admin-panel button{padding:5px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;margin:1px 0;font-size:11px;}
     
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
@@ -144,23 +112,72 @@
     </div>
   </div>
 
+  <div class="star-popup" id="starPopup">
+    <div id="starText">You've just earned +1 star! ⭐</div>
+    <div style="text-align:right;margin-top:4px"><button id="closeStar" class="ghost">Close</button></div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    const firebaseConfig = { /* ... your firebase config ... */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
+      authDomain: "metaverse-1010.firebaseapp.com",
+      projectId: "metaverse-1010",
+      storageBucket: "metaverse-1010.firebasestorage.app",
+      messagingSenderId: "1044064238233",
+      appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+      measurementId: "G-S77BMC266C",
+      databaseURL: "https://metaverse-1010-default-rtdb.firebaseio.com/"
+    };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const rtdb = getDatabase(app);
 
     let currentUser = null;
+    let userColors = {};
+    let chatTimeout = 5000;
+    let lastMessageTime = 0;
+    let autoStarEnabled = true;
+    const dailyStarCap = 500;
 
     function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
-    const onlineCountEl = document.getElementById("onlineCount");
+    function getColorForUser(chatId){
+      if(!userColors[chatId]){
+        const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
+        userColors[chatId]=c[Math.floor(Math.random()*c.length)];
+      }
+      return userColors[chatId];
+    }
 
+    setPersistence(auth,browserLocalPersistence).catch(()=>{});
+
+    // HELLO fade
+    const guestGreetingEl = document.getElementById('guestMsg');
+    const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
+    let greetIndex=0;
+    function showGreeting(){
+      guestGreetingEl.textContent=greetings[greetIndex];
+      guestGreetingEl.style.animation="fadeInOut 3s linear";
+      greetIndex=(greetIndex+1)%greetings.length;
+      setTimeout(showGreeting,3000);
+    }
+    showGreeting();
+
+    // AUTH
+    document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
+      const provider=new GoogleAuthProvider();
+      try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
+    });
+
+    function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
+
+    // PRESENCE
+    const onlineCountEl = document.getElementById("onlineCount");
     const presenceRef = ref(rtdb,"presence");
     function setupPresence(user){
       const userRef = ref(rtdb,"presence/"+user.uid);
@@ -172,11 +189,7 @@
       onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
     });
 
-    document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
-      const provider=new GoogleAuthProvider();
-      try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
-    });
-
+    // CHAT
     onAuthStateChanged(auth,async user=>{
       if(user){
         const userRef = doc(db,"users",user.uid);
@@ -199,7 +212,7 @@
           currentUser.stars=d.stars||0;
           currentUser.cash=d.cash||0;
           document.getElementById("starCount").innerText=currentUser.stars;
-          document.getElementById("cashCount").innerText="₦"+currentUser.cash;
+          document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
         });
 
         const q=collection(db,"messages");
@@ -211,6 +224,7 @@
             const div = document.createElement("div");
             div.classList.add("msg");
             if(m.uid===currentUser.uid) div.classList.add("me");
+            div.style.borderLeft=`3px solid ${getColorForUser(m.chatId||"Guest")}`;
             div.innerHTML = `<span class="meta">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
             messagesDiv.appendChild(div);
           });
@@ -234,6 +248,7 @@
         timestamp:serverTimestamp()
       });
     });
+
   </script>
 </body>
 </html>
