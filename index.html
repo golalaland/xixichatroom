@@ -14,28 +14,8 @@
       --glass: rgba(255,255,255,0.03);
     }
     html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
-    
-    /* --- COMPACT APP WRAPPER --- */
-    #appWrapper{
-      transform: scale(1);
-      transform-origin: top center;
-      width: 100%;
-      height: 100%;
-      display:flex;
-      justify-content:center;
-    }
-
-    .app{
-      display:flex;
-      flex-direction:column;
-      height:100%;
-      gap:10px;
-      padding:10px;
-      box-sizing:border-box;
-      width:100%;
-      max-width:480px;
-    }
-
+    #appWrapper{transform: scale(1);transform-origin: top center;width: 100%;height: 100%;display:flex;justify-content:center;}
+    .app{display:flex;flex-direction:column;height:100%;gap:10px;padding:10px;box-sizing:border-box;width:100%;max-width:480px;}
     .brand{font-weight:700;font-size:24px;color:var(--accent);text-align:center;}
     .room-desc{font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;}
     #authBox{margin-bottom:10px;text-align:center;}
@@ -48,34 +28,19 @@
     .msg.me{background:rgba(255,20,147,0.1);}
     .msg .meta{font-weight:700;font-size:13px;}
     .msg .content{font-size:11px;color:#fff;white-space:pre-wrap;}
-    .send-area{
-      display:flex;
-      align-items:center;
-      gap:4px;
-      background:var(--card);
-      padding:10px;
-      position:sticky;
-      bottom:0;
-      z-index:10;
-      border-top:1px solid rgba(255,255,255,0.05);
-      border-radius:18px;
-    }
+    .send-area{display:flex;align-items:center;gap:4px;background:var(--card);padding:10px;position:sticky;bottom:0;z-index:10;border-top:1px solid rgba(255,255,255,0.05);border-radius:18px;}
     .send-area input{flex:1;padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:#111;color:#fff;font-size:13px;outline:none;}
     .send-area input::placeholder{color:var(--muted);}
     .send-area input:focus{border-color:var(--accent);box-shadow:0 0 8px rgba(255,20,147,0.4);}
     .send-area button.btn{padding:10px 16px;border-radius:999px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;font-size:13px;}
-
     .profile{display:none;flex-direction:column;gap:3px;margin-top:10px;}
-    .profile .small{font-size:11px;color:var(--muted);}
     .stats{font-size:10px;font-weight:700;color:var(--accent);}
     .stats span{font-weight:400;color:#fff;font-family:monospace;font-size:12px;}
     .profile-card{background:var(--glass);padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);}
     .badge{font-size:11px;margin-left:3px;background:none;color:#fff;padding:0;}
     .cash-earned .badge{display:none;}
-
     .admin-panel{display:none;margin-top:6px;padding:5px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);flex-direction:column;gap:3px;}
     .admin-panel button{padding:5px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;margin:1px 0;font-size:11px;}
-    
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
     @keyframes fadeInOut{0%{opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{opacity:0;}}
   </style>
@@ -94,19 +59,23 @@
           <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" allowfullscreen></iframe>
         </div>
 
+        <!-- Sign-in Box -->
         <div id="authBox">
-          <!-- HELLO greeting will appear above this button -->
+          <div id="authGreeting" style="font-size:18px;font-weight:700;color:#FF1493;margin-bottom:10px;"></div>
           <button id="googleSignInBtn" class="btn">Sign in with Google</button>
         </div>
 
+        <!-- Chat Messages -->
         <div id="messages"></div>
 
+        <!-- Send Area -->
         <div class="send-area" id="sendArea" style="display:none;">
           <input type="text" id="messageInput" placeholder="Type your message..." />
           <button id="sendBtn" class="btn">Send</button>
         </div>
       </div>
 
+      <!-- Profile & Admin -->
       <div class="profile" id="profileBox">
         <div class="profile-card">
           <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -166,61 +135,65 @@ function getColorForUser(chatId){
 setPersistence(auth,browserLocalPersistence).catch(()=>{});
 
 // HELLO greeting for sign-in only
-const authBox = document.getElementById("authBox");
-const guestGreetingEl = document.createElement("div");
-guestGreetingEl.style.fontSize = "18px";
-guestGreetingEl.style.fontWeight = "700";
-guestGreetingEl.style.color = "#FF1493";
-guestGreetingEl.style.marginBottom = "10px";
-authBox.prepend(guestGreetingEl);
-
+const authGreetingEl = document.getElementById("authGreeting");
 const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
 let greetIndex = 0;
 function showAuthGreeting(){
-  guestGreetingEl.textContent = greetings[greetIndex];
-  guestGreetingEl.style.animation = "fadeInOut 3s linear";
-  greetIndex = (greetIndex + 1) % greetings.length;
-  setTimeout(showAuthGreeting, 3000);
+  if(!auth.currentUser){
+    authGreetingEl.textContent = greetings[greetIndex];
+    authGreetingEl.style.animation = "fadeInOut 3s linear";
+    greetIndex = (greetIndex + 1) % greetings.length;
+    setTimeout(showAuthGreeting, 3000);
+  } else {
+    authGreetingEl.style.display = "none";
+  }
 }
 showAuthGreeting();
 
-const style = document.createElement("style");
-style.innerHTML = `
-@keyframes fadeInOut{
-  0%{opacity:0;}
-  10%{opacity:1;}
-  90%{opacity:1;}
-  100%{opacity:0;}
-}`;
-document.head.appendChild(style);
-
-// Google sign-in
+// AUTH
 document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
   const provider=new GoogleAuthProvider();
   try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
 });
 
-// Presence
+function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
+
+// PRESENCE
 const onlineCountEl = document.getElementById("onlineCount");
 const presenceRef = ref(rtdb,"presence");
-onValue(presenceRef,snap=>{
-  const val=snap.val()||{};
-  onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
-});
-
 function setupPresence(user){
   const userRef = ref(rtdb,"presence/"+user.uid);
   set(userRef,true);
   onDisconnect(userRef).remove();
 }
+onValue(presenceRef,snap=>{
+  const val=snap.val()||{};
+  onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
+});
 
 function updateAdminPanel(user){
   document.getElementById("adminPanel").style.display = user?.isAdmin ? "flex" : "none";
 }
 
-function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
+// Chat ID prompt
+async function showChatIdPromptIfNeeded(user){
+  const userRef = doc(db,"users",user.uid);
+  const snap = await getDoc(userRef);
+  if(snap.exists()){
+    const data = snap.data();
+    if(!data.chatId){
+      setTimeout(async () => {
+        const newId = prompt("Choose your Chat ID:");
+        if(newId && newId.trim() !== ""){
+          await updateDoc(userRef,{chatId:newId.trim()});
+          document.getElementById("profileName").innerText = newId.trim();
+        }
+      }, 3000);
+    }
+  }
+}
 
-// Auth state
+// AUTH STATE
 onAuthStateChanged(auth,async user=>{
   if(user){
     const userRef = doc(db,"users",user.uid);
@@ -232,43 +205,49 @@ onAuthStateChanged(auth,async user=>{
     currentUser = {uid:user.uid,...userData};
     setupPresence(user);
 
-    // hide sign-in greeting after login
     document.getElementById("authBox").style.display="none";
-    guestGreetingEl.style.display="none";
     document.getElementById("sendArea").style.display="flex";
     document.getElementById("profileBox").style.display="flex";
     document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
 
-    // Listen for stars/cash/admin changes
+    showChatIdPromptIfNeeded(user);
+
     onSnapshot(userRef,docSnap=>{
-      const d = docSnap.data()||{};
+      const d=docSnap.data()||{};
       currentUser.stars=d.stars||0;
       currentUser.cash=d.cash||0;
       currentUser.isAdmin=d.isAdmin||false;
+      const now = Date.now();
+      const lastReset = d.lastStarReset || 0;
+      if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
+        updateDoc(userRef,{stars:0,lastStarReset:now});
+        currentUser.stars = 0;
+      }
       document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
       document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
       updateAdminPanel(currentUser);
     });
 
-    // Auto star increment
     setInterval(async()=>{
+      if(!currentUser || !autoStarEnabled) return;
       if(currentUser.stars < dailyStarCap){
         const userRef = doc(db,"users",currentUser.uid);
-        await updateDoc(userRef,{stars:Math.min(currentUser.stars+1,dailyStarCap)});
+        const newStars = Math.min(currentUser.stars + 1, dailyStarCap);
+        await updateDoc(userRef,{stars:newStars});
       }
     },10000);
 
-    // Listen for messages
-    const q = collection(db,"messages");
-    onSnapshot(q, snap => {
-      const messagesDiv = document.getElementById("messages");
+    // --- MESSAGES LISTENER ---
+    const q=collection(db,"messages");
+    onSnapshot(q,snap=>{
+      const messagesDiv=document.getElementById("messages");
       snap.docChanges().forEach(change=>{
         if(change.type==='added'){
           const m = change.doc.data();
           const div = document.createElement("div");
           div.classList.add("msg");
           if(m.uid===currentUser.uid) div.classList.add("me");
-          const color = getColorForUser(m.chatId||"Guest");
+          const color=getColorForUser(m.chatId||"Guest");
           div.innerHTML = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
           messagesDiv.appendChild(div);
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -276,48 +255,30 @@ onAuthStateChanged(auth,async user=>{
       });
     });
 
-  }else{
+  } else {
     document.getElementById("authBox").style.display="block";
-    guestGreetingEl.style.display="block"; // show greeting again if logged out
     document.getElementById("sendArea").style.display="none";
   }
 });
 
-// Send message
+// SEND MESSAGE
 document.getElementById("sendBtn").addEventListener("click", async()=>{
   const val=document.getElementById("messageInput").value.trim();
   if(!val) return;
   document.getElementById("messageInput").value="";
   await addDoc(collection(db,"messages"),{
-    content: val,
-    uid: currentUser.uid,
-    chatId: currentUser.chatId || generateGuestName(),
-    timestamp: serverTimestamp()
+    content:val,
+    uid:currentUser.uid,
+    chatId:currentUser.chatId||generateGuestName(),
+    timestamp:serverTimestamp()
   });
 });
 
-// Admin functions
-window.pushAnnouncement = async()=>{
-  const msg = prompt("Enter announcement:");
-  if(!msg) return;
-  await addDoc(collection(db,"messages"),{
-    content: "[ANNOUNCEMENT] "+msg,
-    uid: currentUser.uid,
-    chatId: "ADMIN",
-    timestamp: serverTimestamp()
-  });
-};
-window.resetUserStars = async()=>{
-  if(confirm("Reset your stars to 0?")){
-    const userRef = doc(db,"users",currentUser.uid);
-    await updateDoc(userRef,{stars:0});
-  }
-};
-window.clearChat = async()=>{
-  if(confirm("Clear all messages? This cannot be undone.")){
-    alert("Implement batch deletion via Cloud Functions or loop through messages in production.");
-  }
-};
-</script>
+// ADMIN FUNCTIONS (example placeholders)
+window.pushAnnouncement = () => alert("Push Announcement clicked");
+window.resetUserStars = () => alert("Reset Stars clicked");
+window.clearChat = () => alert("Clear Chat clicked");
+
+  </script>
 </body>
 </html>
