@@ -15,7 +15,6 @@
     }
     html,body{height:100%;margin:0;font-family:'XiXi',Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff;background:var(--bg);}
     
-    /* --- COMPACT APP WRAPPER --- */
     #appWrapper{
       transform: scale(1);
       transform-origin: top center;
@@ -128,7 +127,6 @@
         <!-- ADMIN PANEL -->
         <div class="admin-panel" id="adminPanel">
           <h3 style="margin:0;color:#fff;text-align:center;font-size:12px;">⚡ Admin Dashboard ⚡</h3>
-          <!-- Admin buttons remain as in original -->
         </div>
       </div>
     </div>
@@ -137,7 +135,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -156,7 +154,6 @@
 
     let currentUser = null;
     let userColors = {};
-    let autoStarEnabled = true;
     const dailyStarCap = 500;
 
     function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
@@ -183,9 +180,9 @@
     showGreeting();
 
     // AUTH
-    document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
-      const provider=new GoogleAuthProvider();
-      try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
+    document.getElementById("googleSignInBtn").addEventListener("click", async ()=>{
+      const provider = new GoogleAuthProvider();
+      try { await signInWithPopup(auth, provider); } catch(e){console.error(e);}
     });
 
     function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
@@ -226,72 +223,82 @@
     }
 
     // AUTH STATE
-    onAuthStateChanged(auth,async user=>{
+    onAuthStateChanged(auth, async user=>{
       if(user){
         const userRef = doc(db,"users",user.uid);
         const snap = await getDoc(userRef);
         if(!snap.exists()){
-          await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false,lastStarReset:Date.now()});
+          await setDoc(userRef,{
+            chatId:"",
+            email:user.email,
+            stars:0,
+            cash:0,
+            isAdmin:false,
+            lastStarReset:Date.now()
+          });
         }
         const userData = (await getDoc(userRef)).data();
-        currentUser = {uid:user.uid,...userData};
+        currentUser = {uid:user.uid, ...userData};
         setupPresence(user);
 
         document.getElementById("authBox").style.display="none";
         document.getElementById("guestMsg").style.display="none";
         document.getElementById("sendArea").style.display="flex";
         document.getElementById("profileBox").style.display="flex";
-        document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
+        document.getElementById("profileName").innerText=currentUser.chatId || generateGuestName();
 
         showChatIdPromptIfNeeded(user);
 
-        onSnapshot(userRef,docSnap=>{
+        // WATCH USER STATS
+        onSnapshot(userRef, docSnap=>{
           const d=docSnap.data()||{};
           currentUser.stars=d.stars||0;
           currentUser.cash=d.cash||0;
           currentUser.isAdmin=d.isAdmin||false;
+
           const now = Date.now();
           const lastReset = d.lastStarReset || 0;
           if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
             updateDoc(userRef,{stars:0,lastStarReset:now});
             currentUser.stars = 0;
           }
+
           document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
           document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
           updateAdminPanel(currentUser);
         });
 
+        // AUTO STAR INCREMENT
         setInterval(async()=>{
-          if(!currentUser || !autoStarEnabled) return;
+          if(!currentUser) return;
           if(currentUser.stars < dailyStarCap){
             const userRef = doc(db,"users",currentUser.uid);
-            const newStars = Math.min(currentUser.stars + 1, dailyStarCap);
+            const newStars = Math.min(currentUser.stars+1, dailyStarCap);
             await updateDoc(userRef,{stars:newStars});
           }
         },10000);
 
-        // --- MESSAGES LISTENER (hearts removed) ---
-        const q=collection(db,"messages");
-        onSnapshot(q,snap=>{
-          const messagesDiv=document.getElementById("messages");
-          snap.docChanges().forEach(change=>{
-            if(change.type==='added'){
-              const m = change.doc.data();
-              const div = document.createElement("div");
-              div.classList.add("msg");
-              if(m.uid===currentUser.uid) div.classList.add("me");
-              const color=getColorForUser(m.chatId||"Guest");
-              div.innerHTML = `
-                <span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
-                <span class="content">${m.content}</span>
-              `;
-              messagesDiv.appendChild(div);
-              messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
+        // --- MESSAGES LISTENER (ordered by timestamp) ---
+        const messagesQuery = query(collection(db,"messages"), orderBy("timestamp","asc"));
+        onSnapshot(messagesQuery, snap=>{
+          const messagesDiv = document.getElementById("messages");
+          messagesDiv.innerHTML = ""; // clear old messages
+          snap.forEach(doc => {
+            const m = doc.data();
+            const div = document.createElement("div");
+            div.classList.add("msg");
+            if(m.uid === currentUser.uid) div.classList.add("me");
+            const color = getColorForUser(m.chatId || "Guest");
+            div.innerHTML = `
+              <span class="meta" style="color:${color}">${m.chatId || "Guest"}:</span> 
+              <span class="content">${m.content}</span>
+            `;
+            messagesDiv.appendChild(div);
           });
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
-      }else{
+      } else {
         document.getElementById("authBox").style.display="block";
         document.getElementById("sendArea").style.display="none";
       }
@@ -299,14 +306,15 @@
 
     // SEND MESSAGE
     document.getElementById("sendBtn").addEventListener("click", async()=>{
-      const val=document.getElementById("messageInput").value.trim();
+      const val = document.getElementById("messageInput").value.trim();
       if(!val) return;
       document.getElementById("messageInput").value="";
+      const chatId = currentUser.chatId || generateGuestName();
       await addDoc(collection(db,"messages"),{
-        content:val,
-        uid:currentUser.uid,
-        chatId:currentUser.chatId||generateGuestName(),
-        timestamp:serverTimestamp()
+        content: val,
+        uid: currentUser.uid,
+        chatId: chatId,
+        timestamp: serverTimestamp()
       });
     });
   </script>
