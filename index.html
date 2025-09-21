@@ -88,7 +88,6 @@
         </div>
       </div>
 
-      <!-- ADMIN PANEL -->
       <div class="admin-panel" id="adminPanel">
         <h3 style="margin:0;color:#fff;text-align:center;font-size:12px;">⚡ Admin Dashboard ⚡</h3>
         <button onclick="pushAnnouncement()">Push Announcement</button>
@@ -100,192 +99,191 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-  import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
-    authDomain: "metaverse-1010.firebaseapp.com",
-    projectId: "metaverse-1010",
-    storageBucket: "metaverse-1010.firebasestorage.app",
-    messagingSenderId: "1044064238233",
-    appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
-    databaseURL: "https://metaverse-1010-default-rtdb.firebaseio.com/"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
+  authDomain: "metaverse-1010.firebaseapp.com",
+  projectId: "metaverse-1010",
+  storageBucket: "metaverse-1010.firebasestorage.app",
+  messagingSenderId: "1044064238233",
+  appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+  databaseURL: "https://metaverse-1010-default-rtdb.firebaseio.com/"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const rtdb = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const rtdb = getDatabase(app);
 
-  let currentUser = null;
-  let userColors = {};
-  const dailyStarCap = 500;
-  const autoStarEnabled = true;
+let currentUser = null;
+let userColors = {};
+const dailyStarCap = 500;
+const autoStarEnabled = true;
 
-  function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
-  function getColorForUser(chatId){
-    if(!userColors[chatId]){
-      const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
-      userColors[chatId]=c[Math.floor(Math.random()*c.length)];
+function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
+function getColorForUser(chatId){
+  if(!userColors[chatId]){
+    const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
+    userColors[chatId]=c[Math.floor(Math.random()*c.length)];
+  }
+  return userColors[chatId];
+}
+
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+
+// AUTH
+document.getElementById("googleSignInBtn").addEventListener("click", async () => {
+  const provider = new GoogleAuthProvider();
+  try { await signInWithPopup(auth, provider); } catch(e){ console.error(e); }
+});
+
+function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
+
+// PRESENCE
+const onlineCountEl = document.getElementById("onlineCount");
+const presenceRef = ref(rtdb,"presence");
+function setupPresence(user){
+  const userRef = ref(rtdb,"presence/"+user.uid);
+  set(userRef,true);
+  onDisconnect(userRef).remove();
+}
+onValue(presenceRef, snap => {
+  const val = snap.val()||{};
+  onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
+});
+
+function updateAdminPanel(user){
+  const adminPanel = document.getElementById("adminPanel");
+  adminPanel.style.display = user?.isAdmin ? "flex" : "none";
+}
+
+// AUTH STATE
+onAuthStateChanged(auth, async user => {
+  if(user){
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if(!snap.exists()){
+      await setDoc(userRef, { chatId:"", email:user.email, stars:0, cash:0, isAdmin:false, lastStarReset:Date.now() });
     }
-    return userColors[chatId];
-  }
 
-  setPersistence(auth, browserLocalPersistence).catch(()=>{});
+    const userData = (await getDoc(userRef)).data();
+    currentUser = { uid:user.uid, ...userData };
 
-  // AUTH
-  document.getElementById("googleSignInBtn").addEventListener("click", async () => {
-    const provider = new GoogleAuthProvider();
-    try { await signInWithPopup(auth, provider); } catch(e){ console.error(e); }
-  });
+    setupPresence(user);
 
-  function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
+    document.getElementById("authBox").style.display="none";
+    document.getElementById("sendArea").style.display="flex";
+    document.getElementById("profileBox").style.display="flex";
+    document.getElementById("profileName").innerText = currentUser.chatId || generateGuestName();
 
-  // PRESENCE
-  const onlineCountEl = document.getElementById("onlineCount");
-  const presenceRef = ref(rtdb,"presence");
-  function setupPresence(user){
-    const userRef = ref(rtdb,"presence/"+user.uid);
-    set(userRef,true);
-    onDisconnect(userRef).remove();
-  }
-  onValue(presenceRef, snap => {
-    const val = snap.val()||{};
-    onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
-  });
+    // CHAT ID PROMPT
+    if(!currentUser.chatId){
+      setTimeout(async ()=>{
+        const newId = prompt("Choose your Chat ID:");
+        if(newId && newId.trim() !== ""){
+          await updateDoc(userRef, { chatId:newId.trim() });
+          location.reload();
+        }
+      }, 1000);
+    }
 
-  function updateAdminPanel(user){
-    const adminPanel = document.getElementById("adminPanel");
-    if(user?.isAdmin) adminPanel.style.display = "flex";
-    else adminPanel.style.display = "none";
-  }
+    // USER DATA LISTENER
+    onSnapshot(userRef, docSnap => {
+      const d = docSnap.data()||{};
+      currentUser.stars = d.stars||0;
+      currentUser.cash = d.cash||0;
+      currentUser.isAdmin = d.isAdmin||false;
 
-  // AUTH STATE
-  onAuthStateChanged(auth, async user => {
-    if(user){
-      const userRef = doc(db, "users", user.uid);
-      const snap = await getDoc(userRef);
-      if(!snap.exists()){
-        await setDoc(userRef, { chatId:"", email:user.email, stars:0, cash:0, isAdmin:false, lastStarReset:Date.now() });
+      const now = Date.now();
+      const lastReset = d.lastStarReset || 0;
+      if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
+        updateDoc(userRef,{stars:0,lastStarReset:now});
+        currentUser.stars = 0;
       }
 
-      const userData = (await getDoc(userRef)).data();
-      currentUser = { uid:user.uid, ...userData };
+      document.getElementById("starCount").innerText = formatNumberWithCommas(currentUser.stars);
+      document.getElementById("cashCount").innerText = "₦" + formatNumberWithCommas(currentUser.cash);
+      updateAdminPanel(currentUser);
+    });
 
-      setupPresence(user);
-
-      document.getElementById("authBox").style.display="none";
-      document.getElementById("sendArea").style.display="flex";
-      document.getElementById("profileBox").style.display="flex";
-      document.getElementById("profileName").innerText = currentUser.chatId || generateGuestName();
-
-      // CHAT ID PROMPT
-      if(!currentUser.chatId){
-        setTimeout(async ()=>{
-          const newId = prompt("Choose your Chat ID:");
-          if(newId && newId.trim() !== ""){
-            await updateDoc(userRef, { chatId:newId.trim() });
-            location.reload();
-          }
-        }, 1000);
+    // Auto-star increment
+    setInterval(async ()=>{
+      if(!currentUser || !autoStarEnabled) return;
+      if(currentUser.stars < dailyStarCap){
+        const userRef = doc(db,"users",currentUser.uid);
+        const newStars = Math.min(currentUser.stars + 1, dailyStarCap);
+        await updateDoc(userRef,{stars:newStars});
       }
+    },10000);
 
-      // USER DATA LISTENER
-      onSnapshot(userRef, docSnap => {
-        const d = docSnap.data()||{};
-        currentUser.stars = d.stars||0;
-        currentUser.cash = d.cash||0;
-        currentUser.isAdmin = d.isAdmin||false;
-
-        // Daily star reset
-        const now = Date.now();
-        const lastReset = d.lastStarReset || 0;
-        if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
-          updateDoc(userRef,{stars:0,lastStarReset:now});
-          currentUser.stars = 0;
+    // MESSAGES LISTENER
+    const q = collection(db, "messages");
+    onSnapshot(q, snap => {
+      const messagesDiv = document.getElementById("messages");
+      snap.docChanges().forEach(change => {
+        if(change.type === 'added'){
+          const m = change.doc.data();
+          const div = document.createElement("div");
+          div.classList.add("msg");
+          if(m.uid === currentUser.uid) div.classList.add("me");
+          const color = getColorForUser(m.chatId||"Guest");
+          div.innerHTML = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
+          messagesDiv.appendChild(div);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-
-        document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
-        document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
-        updateAdminPanel(currentUser);
       });
-
-      // Auto-star increment
-      setInterval(async ()=>{
-        if(!currentUser || !autoStarEnabled) return;
-        if(currentUser.stars < dailyStarCap){
-          const userRef = doc(db,"users",currentUser.uid);
-          const newStars = Math.min(currentUser.stars + 1, dailyStarCap);
-          await updateDoc(userRef,{stars:newStars});
-        }
-      }, 10000);
-
-      // MESSAGES LISTENER
-      const q = collection(db, "messages");
-      onSnapshot(q, snap => {
-        const messagesDiv = document.getElementById("messages");
-        snap.docChanges().forEach(change => {
-          if(change.type === 'added'){
-            const m = change.doc.data();
-            const div = document.createElement("div");
-            div.classList.add("msg");
-            if(m.uid===currentUser.uid) div.classList.add("me");
-            const color = getColorForUser(m.chatId||"Guest");
-            div.innerHTML = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
-            messagesDiv.appendChild(div);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-          }
-        });
-      });
-
-    }else{
-      document.getElementById("authBox").style.display="block";
-      document.getElementById("sendArea").style.display="none";
-    }
-  });
-
-  // SEND MESSAGE
-  document.getElementById("sendBtn").addEventListener("click", async ()=>{
-    const val = document.getElementById("messageInput").value.trim();
-    if(!val) return;
-    document.getElementById("messageInput").value="";
-    await addDoc(collection(db,"messages"),{
-      content: val,
-      uid: currentUser.uid,
-      chatId: currentUser.chatId || generateGuestName(),
-      timestamp: serverTimestamp()
     });
+
+  }else{
+    document.getElementById("authBox").style.display="block";
+    document.getElementById("sendArea").style.display="none";
+    // hide greeting if any (chatroom)
+    const guestGreetingEl = document.getElementById("guestMsg");
+    if(guestGreetingEl) guestGreetingEl.style.display = "none";
+  }
+});
+
+// SEND MESSAGE
+document.getElementById("sendBtn").addEventListener("click", async ()=>{
+  const val = document.getElementById("messageInput").value.trim();
+  if(!val) return;
+  document.getElementById("messageInput").value="";
+  await addDoc(collection(db,"messages"),{
+    content: val,
+    uid: currentUser.uid,
+    chatId: currentUser.chatId || generateGuestName(),
+    timestamp: serverTimestamp()
   });
+});
 
-  // --- ADMIN FUNCTIONS ---
-  window.pushAnnouncement = async () => {
-    const msg = prompt("Enter announcement:");
-    if(!msg) return;
-    await addDoc(collection(db,"messages"),{
-      content: "[ANNOUNCEMENT] "+msg,
-      uid: currentUser.uid,
-      chatId: "ADMIN",
-      timestamp: serverTimestamp()
-    });
-  };
+// --- ADMIN FUNCTIONS ---
+window.pushAnnouncement = async () => {
+  const msg = prompt("Enter announcement:");
+  if(!msg) return;
+  await addDoc(collection(db,"messages"),{
+    content: "[ANNOUNCEMENT] "+msg,
+    uid: currentUser.uid,
+    chatId: "ADMIN",
+    timestamp: serverTimestamp()
+  });
+};
 
-  window.resetUserStars = async () => {
-    if(confirm("Reset your stars to 0?")){
-      const userRef = doc(db,"users",currentUser.uid);
-      await updateDoc(userRef,{stars:0});
-    }
-  };
+window.resetUserStars = async () => {
+  if(confirm("Reset your stars to 0?")){
+    const userRef = doc(db,"users",currentUser.uid);
+    await updateDoc(userRef,{stars:0});
+  }
+};
 
-  window.clearChat = async () => {
-    if(confirm("Clear all messages? This cannot be undone.")){
-      const snap = await collection(db,"messages");
-      // Note: Firestore doesn't support batch deletion easily, you'd need cloud functions or delete individually
-      alert("Implement batch deletion with cloud functions or loop through docs in production.");
-    }
-  };
+window.clearChat = async () => {
+  if(confirm("Clear all messages? This cannot be undone.")){
+    alert("Implement batch deletion with cloud functions or loop through docs in production.");
+  }
+};
 </script>
 </body>
 </html>
