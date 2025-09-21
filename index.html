@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -119,7 +120,8 @@
                 <span class="badge">⭐</span>
               </div>
               <div class="stats cash-earned">CASH EARNED: 
-                <span id="cashCount">₦0</span>
+                <span id="cashCount">₦0</span> 
+                <span class="badge">₦</span>
               </div>
             </div>
             <a href="https://xixi.live" target="_blank" class="redeem-btn" id="redeemBtn">Redeem</a>
@@ -164,168 +166,179 @@
     <div id="starText">You've just earned +1 star! ⭐</div>
     <div style="text-align:right;margin-top:4px"><button id="closeStar" class="ghost">Close</button></div>
   </div>
- <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-const firebaseConfig = { /* same as before */ };
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const rtdb = getDatabase(app);
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-let currentUser = null;
-let userColors = {};
-let autoStarEnabled = true;
-const dailyStarCap = 500;
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbKz4ef_eUDlCukjmnK38sOwueYuzqoao",
+      authDomain: "metaverse-1010.firebaseapp.com",
+      projectId: "metaverse-1010",
+      storageBucket: "metaverse-1010.firebasestorage.app",
+      messagingSenderId: "1044064238233",
+      appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+      measurementId: "G-S77BMC266C",
+      databaseURL: "https://metaverse-1010-default-rtdb.firebaseio.com/"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const rtdb = getDatabase(app);
 
-function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
-function getColorForUser(chatId){
-  if(!userColors[chatId]){
-    const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
-    userColors[chatId]=c[Math.floor(Math.random()*c.length)];
-  }
-  return userColors[chatId];
-}
+    let currentUser = null;
+    let userColors = {};
+    let chatTimeout = 5000;
+    let lastMessageTime = 0;
+    let autoStarEnabled = true;
+    const dailyStarCap = 500;
 
-setPersistence(auth,browserLocalPersistence).catch(()=>{});
-
-const guestGreetingEl = document.getElementById('guestMsg');
-const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
-let greetIndex=0;
-function showGreeting(){
-  guestGreetingEl.textContent=greetings[greetIndex];
-  guestGreetingEl.style.animation="fadeInOut 3s linear";
-  greetIndex=(greetIndex+1)%greetings.length;
-  setTimeout(()=>{
-    guestGreetingEl.style.animation="";
-    showGreeting();
-  },3000);
-}
-showGreeting();
-
-document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
-  const provider=new GoogleAuthProvider();
-  try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
-});
-
-function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
-
-const onlineCountEl = document.getElementById("onlineCount");
-const presenceRef = ref(rtdb,"presence");
-function setupPresence(user){
-  const userRef = ref(rtdb,"presence/"+user.uid);
-  set(userRef,true);
-  onDisconnect(userRef).remove();
-}
-onValue(presenceRef,snap=>{
-  const val=snap.val()||{};
-  onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
-});
-
-function updateAdminPanel(user){
-  document.getElementById("adminPanel").style.display = user?.isAdmin ? "flex" : "none";
-}
-
-async function showChatIdPromptIfNeeded(user){
-  const userRef = doc(db,"users",user.uid);
-  const snap = await getDoc(userRef);
-  if(snap.exists()){
-    const data = snap.data();
-    if(!data.chatId){
-      setTimeout(async () => {
-        const newId = prompt("Choose your Chat ID:");
-        if(newId && newId.trim() !== ""){
-          await updateDoc(userRef,{chatId:newId.trim()});
-          location.reload();
-        }
-      }, 3000);
-    }
-  }
-}
-
-onAuthStateChanged(auth,async user=>{
-  if(user){
-    const userRef = doc(db,"users",user.uid);
-    const snap = await getDoc(userRef);
-    if(!snap.exists()){
-      await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false,lastStarReset:Date.now()});
-    }
-    const userData = (await getDoc(userRef)).data();
-    currentUser = {uid:user.uid,...userData};
-    setupPresence(user);
-
-    document.getElementById("authBox").style.display="none";
-    document.getElementById("guestMsg").style.display="none";
-    document.getElementById("sendArea").style.display="flex";
-    document.getElementById("profileBox").style.display="flex";
-    document.getElementById("redeemBtn").style.display="inline-block";
-    document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
-
-    showChatIdPromptIfNeeded(user);
-
-    onSnapshot(userRef,docSnap=>{
-      const d=docSnap.data()||{};
-      currentUser.stars=d.stars||0;
-      currentUser.cash=d.cash||0;
-      currentUser.isAdmin=d.isAdmin||false;
-      const now = Date.now();
-      const lastReset = d.lastStarReset || 0;
-      if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
-        updateDoc(userRef,{stars:0,lastStarReset:now});
-        currentUser.stars = 0;
+    function generateGuestName(){return "GUEST " + Math.floor(1000+Math.random()*9000);}
+    function getColorForUser(chatId){
+      if(!userColors[chatId]){
+        const c=["#FF6B6B","#FF1493","#FF69B4","#FF85C0","#FF00FF"];
+        userColors[chatId]=c[Math.floor(Math.random()*c.length)];
       }
-      document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
-      document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
-      updateAdminPanel(currentUser);
+      return userColors[chatId];
+    }
+
+    setPersistence(auth,browserLocalPersistence).catch(()=>{});
+
+    const guestGreetingEl = document.getElementById('guestMsg');
+    const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
+    let greetIndex=0;
+    function showGreeting(){
+      guestGreetingEl.textContent=greetings[greetIndex];
+      guestGreetingEl.style.animation="fadeInOut 3s linear";
+      greetIndex=(greetIndex+1)%greetings.length;
+      setTimeout(showGreeting,3000);
+    }
+    showGreeting();
+
+    document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
+      const provider=new GoogleAuthProvider();
+      try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
     });
 
-    setInterval(async()=>{
-      if(!currentUser || !autoStarEnabled) return;
-      if(currentUser.stars < dailyStarCap){
-        const userRef = doc(db,"users",currentUser.uid);
-        const newStars = Math.min(currentUser.stars + 1, dailyStarCap);
-        await updateDoc(userRef,{stars:newStars});
-      }
-    },10000);
+    function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
 
-    const q=collection(db,"messages");
-    onSnapshot(q,snap=>{
-      const messagesDiv=document.getElementById("messages");
-      snap.docChanges().forEach(change=>{
-        if(change.type==='added'){
-          const m = change.doc.data();
-          const div = document.createElement("div");
-          div.classList.add("msg");
-          if(m.uid===currentUser.uid) div.classList.add("me");
-          const color=getColorForUser(m.chatId||"Guest");
-          div.innerHTML = `
-            <span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
-            <span class="content">${m.content}</span>
-          `;
-          messagesDiv.appendChild(div);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    const onlineCountEl = document.getElementById("onlineCount");
+    const presenceRef = ref(rtdb,"presence");
+    function setupPresence(user){
+      const userRef = ref(rtdb,"presence/"+user.uid);
+      set(userRef,true);
+      onDisconnect(userRef).remove();
+    }
+    onValue(presenceRef,snap=>{
+      const val=snap.val()||{};
+      onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
+    });
+
+    function updateAdminPanel(user){
+      document.getElementById("adminPanel").style.display = user?.isAdmin ? "flex" : "none";
+    }
+
+    async function showChatIdPromptIfNeeded(user){
+      const userRef = doc(db,"users",user.uid);
+      const snap = await getDoc(userRef);
+      if(snap.exists()){
+        const data = snap.data();
+        if(!data.chatId){
+          setTimeout(async () => {
+            const newId = prompt("Choose your Chat ID:");
+            if(newId && newId.trim() !== ""){
+              await updateDoc(userRef,{chatId:newId.trim()});
+              location.reload();
+            }
+          }, 3000);
         }
+      }
+    }
+
+    onAuthStateChanged(auth,async user=>{
+      if(user){
+        const userRef = doc(db,"users",user.uid);
+        const snap = await getDoc(userRef);
+        if(!snap.exists()){
+          await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false,lastStarReset:Date.now()});
+        }
+        const userData = (await getDoc(userRef)).data();
+        currentUser = {uid:user.uid,...userData};
+        setupPresence(user);
+
+        document.getElementById("authBox").style.display="none";
+        document.getElementById("guestMsg").style.display="none";
+        document.getElementById("sendArea").style.display="flex";
+        document.getElementById("profileBox").style.display="flex";
+        document.getElementById("redeemBtn").style.display="inline-block";
+        document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
+
+        showChatIdPromptIfNeeded(user);
+
+        onSnapshot(userRef,docSnap=>{
+          const d=docSnap.data()||{};
+          currentUser.stars=d.stars||0;
+          currentUser.cash=d.cash||0;
+          currentUser.isAdmin=d.isAdmin||false;
+          const now = Date.now();
+          const lastReset = d.lastStarReset || 0;
+          if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
+            updateDoc(userRef,{stars:0,lastStarReset:now});
+            currentUser.stars = 0;
+          }
+          document.getElementById("starCount").innerText=formatNumberWithCommas(currentUser.stars);
+          document.getElementById("cashCount").innerText="₦"+formatNumberWithCommas(currentUser.cash);
+          updateAdminPanel(currentUser);
+        });
+
+        setInterval(async()=>{
+          if(!currentUser || !autoStarEnabled) return;
+          if(currentUser.stars < dailyStarCap){
+            const userRef = doc(db,"users",currentUser.uid);
+            const newStars = Math.min(currentUser.stars + 1, dailyStarCap);
+            await updateDoc(userRef,{stars:newStars});
+          }
+        },10000);
+
+        const q=collection(db,"messages");
+        onSnapshot(q,snap=>{
+          const messagesDiv=document.getElementById("messages");
+          snap.docChanges().forEach(change=>{
+            if(change.type==='added'){
+              const m = change.doc.data();
+              const div = document.createElement("div");
+              div.classList.add("msg");
+              if(m.uid===currentUser.uid) div.classList.add("me");
+              const color=getColorForUser(m.chatId||"Guest");
+              div.innerHTML = `
+                <span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
+                <span class="content">${m.content}</span>
+              `;
+              messagesDiv.appendChild(div);
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+          });
+        });
+
+      }else{
+        document.getElementById("authBox").style.display="block";
+        document.getElementById("sendArea").style.display="none";
+      }
+    });
+
+    document.getElementById("sendBtn").addEventListener("click", async()=>{
+      const val=document.getElementById("messageInput").value.trim();
+      if(!val) return;
+      document.getElementById("messageInput").value="";
+      await addDoc(collection(db,"messages"),{
+        content:val,
+        uid:currentUser.uid,
+        chatId:currentUser.chatId||generateGuestName(),
+        timestamp:serverTimestamp()
       });
     });
-
-  }else{
-    document.getElementById("authBox").style.display="block";
-    document.getElementById("sendArea").style.display="none";
-  }
-});
-
-document.getElementById("sendBtn").addEventListener("click", async()=>{
-  const val=document.getElementById("messageInput").value.trim();
-  if(!val) return;
-  document.getElementById("messageInput").value="";
-  await addDoc(collection(db,"messages"),{
-    content:val,
-    uid:currentUser.uid,
-    chatId:currentUser.chatId||generateGuestName(),
-    timestamp:serverTimestamp()
-  });
-});
-</script>
+  </script>
+</body>
+</html>
