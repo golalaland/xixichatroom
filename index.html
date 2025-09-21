@@ -173,7 +173,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -246,19 +246,21 @@
       document.getElementById("adminPanel").style.display = user?.isAdmin ? "flex" : "none";
     }
 
+    // --- DELAYED CHAT ID PROMPT ---
     async function showChatIdPromptIfNeeded(user){
       const userRef = doc(db,"users",user.uid);
       const snap = await getDoc(userRef);
       if(snap.exists()){
         const data = snap.data();
         if(!data.chatId){
-          setTimeout(async ()=>{
+          // Delay 3 seconds
+          setTimeout(async () => {
             const newId = prompt("Choose your Chat ID:");
-            if(newId && newId.trim()!==""){
+            if(newId && newId.trim() !== ""){
               await updateDoc(userRef,{chatId:newId.trim()});
               location.reload();
             }
-          },5000);
+          }, 3000);
         }
       }
     }
@@ -281,6 +283,8 @@
         document.getElementById("profileBox").style.display="flex";
         document.getElementById("redeemBtn").style.display="inline-block";
         document.getElementById("profileName").innerText=currentUser.chatId||generateGuestName();
+
+        showChatIdPromptIfNeeded(user);
 
         onSnapshot(userRef,docSnap=>{
           const d=docSnap.data()||{};
@@ -307,7 +311,7 @@
           }
         },10000);
 
-        // MESSAGES LISTENER
+        // --- MESSAGES LISTENER + HEART FIX ---
         const q=collection(db,"messages");
         onSnapshot(q,snap=>{
           const messagesDiv=document.getElementById("messages");
@@ -318,44 +322,62 @@
               div.classList.add("msg");
               if(m.uid===currentUser.uid) div.classList.add("me");
               const color=getColorForUser(m.chatId||"Guest");
-              let innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> <span class="content">${m.content}</span>`;
-              div.innerHTML = innerContent + `
+              div.innerHTML = `
+                <span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
+                <span class="content">${m.content}</span>
                 <span class="heart-btn">${m.likes > 0 ? '♥' : '♡'} 
                   <span class="like-count" style="display:${m.likes>0?'inline':'none'}">${m.likes||0}</span>
-                </span>`;
+                </span>
+              `;
               const heartBtn = div.querySelector('.heart-btn');
               heartBtn.addEventListener('click', async () => {
-                const liked = heartBtn.textContent.includes('♡');
-                let newCount = liked ? (m.likes || 0) + 1 : (m.likes || 0) - 1;
-                heartBtn.innerHTML = (liked ? '♥' : '♡') + ` <span class="like-count" style="display:${newCount>0?'inline':'none'}">${newCount}</span>`;
-                m.likes = newCount;
                 const msgRef = doc(db,"messages",change.doc.id);
-                await updateDoc(msgRef,{likes:newCount});
+                const liked = heartBtn.textContent.includes('♡');
+                let currentLikes = parseInt(div.querySelector(".like-count").textContent) || 0;
+                currentLikes = liked ? currentLikes + 1 : currentLikes - 1;
+                div.querySelector(".like-count").textContent=currentLikes;
+                div.querySelector(".like-count").style.display=currentLikes>0?'inline':'none';
+                heartBtn.innerHTML=(liked?'♥':'♡')+` <span class="like-count" style="display:${currentLikes>0?'inline':'none'}">${currentLikes}</span>`;
+                await updateDoc(msgRef,{likes:increment(liked?1:-1)});
               });
               messagesDiv.appendChild(div);
               messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
+            if(change.type==='modified'){
+              const messagesDiv=document.getElementById("messages");
+              const divs=messagesDiv.querySelectorAll(".msg");
+              divs.forEach(div=>{
+                const metaName=div.querySelector(".meta")?.textContent?.replace(":","");
+                if(metaName===change.doc.data().chatId||"Guest"){
+                  const likeSpan=div.querySelector(".like-count");
+                  const heartBtn=div.querySelector(".heart-btn");
+                  const likes=change.doc.data().likes||0;
+                  likeSpan.textContent=likes;
+                  likeSpan.style.display=likes>0?'inline':'none';
+                  heartBtn.innerHTML=(likes>0?'♥':'♡')+` <span class="like-count" style="display:${likes>0?'inline':'none'}">${likes}</span>`;
+                }
+              });
+            }
           });
         });
 
-      } else {
+      }else{
         document.getElementById("authBox").style.display="block";
         document.getElementById("sendArea").style.display="none";
-        document.getElementById("profileBox").style.display="none";
       }
     });
 
-    document.getElementById("sendBtn").addEventListener("click",async()=>{
-      const inp = document.getElementById("messageInput");
-      if(inp.value.trim()==="") return;
-      const content = inp.value.trim();
-      inp.value="";
-      const docRef = await addDoc(collection(db,"messages"),{
+    // SEND MESSAGE
+    document.getElementById("sendBtn").addEventListener("click", async()=>{
+      const val=document.getElementById("messageInput").value.trim();
+      if(!val) return;
+      document.getElementById("messageInput").value="";
+      await addDoc(collection(db,"messages"),{
+        content:val,
         uid:currentUser.uid,
         chatId:currentUser.chatId||generateGuestName(),
-        content,
-        likes:0,
-        ts:serverTimestamp()
+        timestamp:serverTimestamp(),
+        likes:0
       });
     });
   </script>
