@@ -169,7 +169,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -189,8 +189,6 @@
 
     let currentUser = null;
     let userColors = {};
-    let chatTimeout = 5000;
-    let lastMessageTime = 0;
     let autoStarEnabled = true;
     const dailyStarCap = 500;
 
@@ -301,49 +299,57 @@
           }
         },10000);
 
-        // ---------------- FIXED FIRESTORE MESSAGING ----------------
-        const messagesDiv = document.getElementById("messages");
-        const messagesQuery = query(collection(db, "messages"), orderBy("timestamp","asc"));
-        onSnapshot(messagesQuery, (snapshot) => {
-          messagesDiv.innerHTML = ""; // clear to prevent duplicates
-          snapshot.forEach((doc) => {
-            const m = doc.data();
-            const div = document.createElement("div");
-            div.classList.add("msg");
-            if (m.uid === currentUser.uid) div.classList.add("me");
-            const color = getColorForUser(m.chatId || "Guest");
-            div.innerHTML = `
-              <span class="meta" style="color:${color}">${m.chatId || "Guest"}:</span> 
-              <span class="content">${m.content}</span>
-            `;
-            messagesDiv.appendChild(div);
+        const messagesDiv=document.getElementById("messages");
+        const q=collection(db,"messages");
+
+        onSnapshot(q,snap=>{
+          snap.docChanges().forEach(change=>{
+            if(change.type==='added'){
+              const m = change.doc.data();
+              // Skip if already exists locally (avoid duplicate for own sent message)
+              if([...messagesDiv.children].some(c=>c.dataset.ts===String(m.timestamp?.seconds))) return;
+              const div = document.createElement("div");
+              div.classList.add("msg");
+              if(m.uid===currentUser.uid) div.classList.add("me");
+              div.dataset.ts = m.timestamp?.seconds || Date.now();
+              const color=getColorForUser(m.chatId||"Guest");
+              div.innerHTML = `
+                <span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
+                <span class="content">${m.content}</span>
+              `;
+              messagesDiv.appendChild(div);
+              messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
           });
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
 
-        document.getElementById("sendBtn").addEventListener("click", async () => {
-          if (!currentUser) return;
-          const inputEl = document.getElementById("messageInput");
-          const val = inputEl.value.trim();
-          if (!val) return;
-          inputEl.value = "";
-
-          try {
-            await addDoc(collection(db, "messages"), {
-              content: val,
-              uid: currentUser.uid,
-              chatId: currentUser.chatId || generateGuestName(),
-              timestamp: serverTimestamp()
-            });
-          } catch (e) {
-            console.error("Failed to send message:", e);
-            alert("Message failed to send. Check console for details.");
-          }
-        });
-
+      }else{
+        document.getElementById("authBox").style.display="block";
+        document.getElementById("sendArea").style.display="none";
       }
     });
 
+    document.getElementById("sendBtn").addEventListener("click", async()=>{
+      const val=document.getElementById("messageInput").value.trim();
+      if(!val) return;
+      document.getElementById("messageInput").value="";
+
+      const messagesDiv=document.getElementById("messages");
+      // Instant local message display
+      const localDiv = document.createElement("div");
+      localDiv.classList.add("msg","me");
+      localDiv.innerHTML = `<span class="meta" style="color:${getColorForUser(currentUser.chatId||"Guest")}">${currentUser.chatId||"Guest"}:</span> <span class="content">${val}</span>`;
+      messagesDiv.appendChild(localDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      // Add to Firestore
+      await addDoc(collection(db,"messages"),{
+        content:val,
+        uid:currentUser.uid,
+        chatId:currentUser.chatId||generateGuestName(),
+        timestamp:serverTimestamp()
+      });
+    });
   </script>
 </body>
 </html>
