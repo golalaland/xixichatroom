@@ -59,11 +59,6 @@
     .redeem-btn{display:none;background:var(--accent);color:#000;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:auto;text-decoration:none;}
     .admin-panel{display:none;margin-top:8px;padding:6px;background:#111;border-radius:8px;border:1px solid rgba(255,20,147,0.3);flex-direction:column;gap:4px;}
     .admin-panel button{padding:6px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;margin:2px 0;}
-
-    /* Mention highlight */
-    .mentioned { background: rgba(255,20,147,0.2) !important; border-left:3px solid var(--accent); animation: fadeMention 1s ease; }
-    @keyframes fadeMention { 0% {opacity:0.5;} 50%{opacity:1;} 100%{opacity:1;} }
-
     @keyframes fadeInUp{to{opacity:1;transform:translateY(0);}}
     @keyframes fadeInOut{0%{opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{opacity:0;}}
   </style>
@@ -151,13 +146,10 @@
     <div style="text-align:right;margin-top:6px"><button id="closeStar" class="ghost">Close</button></div>
   </div>
 
-  <!-- MENTION TONE -->
-  <audio id="mentionTone" src="https://freesound.org/data/previews/522/522188_11999906-lq.mp3" preload="auto"></audio>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, orderBy, serverTimestamp, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getDatabase, ref, onDisconnect, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -167,6 +159,7 @@
       storageBucket: "metaverse-1010.firebasestorage.app",
       messagingSenderId: "1044064238233",
       appId: "1:1044064238233:web:2fbdfb811cb0a3ba349608",
+      measurementId: "G-S77BMC266C",
       databaseURL: "https://metaverse-1010-default-rtdb.firebaseio.com/"
     };
     const app = initializeApp(firebaseConfig);
@@ -176,7 +169,7 @@
 
     let currentUser = null;
     let userColors = {};
-    let chatTimeout = 5000;
+    let chatTimeout = 5000; // 5s default
     let lastMessageTime = 0;
     let autoStarEnabled = true;
     const dailyStarCap = 500;
@@ -192,6 +185,7 @@
 
     setPersistence(auth,browserLocalPersistence).catch(()=>{});
 
+    // ---------------- HELLO fade ----------------
     const guestGreetingEl = document.getElementById('guestMsg');
     const greetings = ["HELLO","HOLA","BONJOUR","こんにちは","CIAO","안녕하세요","你好","SALUT","OLÁ"];
     let greetIndex=0;
@@ -203,11 +197,13 @@
     }
     showGreeting();
 
+    // ---------------- AUTH ----------------
     document.getElementById("googleSignInBtn").addEventListener("click",async()=>{
       const provider=new GoogleAuthProvider();
       try{await signInWithPopup(auth,provider);}catch(e){console.error(e);}
     });
 
+    // ---------------- MESSAGES ----------------
     document.getElementById("sendBtn").addEventListener("click",async()=>{
       if(!currentUser) return;
       const now = Date.now();
@@ -221,6 +217,7 @@
 
     function formatNumberWithCommas(n){return new Intl.NumberFormat('en-NG').format(n);}
 
+    // ---------------- PRESENCE ----------------
     const onlineCountEl = document.getElementById("onlineCount");
     const presenceRef = ref(rtdb,"presence");
     function setupPresence(user){
@@ -233,7 +230,10 @@
       onlineCountEl.textContent = `(${Object.keys(val).length} online)`;
     });
 
-    function updateAdminPanel(user){document.getElementById("adminPanel").style.display = user?.isAdmin ? "flex" : "none";}
+    // ---------------- ADMIN ----------------
+    function updateAdminPanel(user){
+      document.getElementById("adminPanel").style.display = user?.isAdmin ? "flex" : "none";
+    }
 
     async function showChatIdPromptIfNeeded(user){
       const userRef = doc(db,"users",user.uid);
@@ -252,11 +252,14 @@
       }
     }
 
+    // ---------------- AUTH STATE ----------------
     onAuthStateChanged(auth,async user=>{
       if(user){
         const userRef = doc(db,"users",user.uid);
         const snap = await getDoc(userRef);
-        if(!snap.exists()){ await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false,lastStarReset:Date.now()}); }
+        if(!snap.exists()){
+          await setDoc(userRef,{chatId:"",email:user.email,stars:0,cash:0,isAdmin:false,lastStarReset:Date.now()});
+        }
         const userData = (await getDoc(userRef)).data();
         currentUser = {uid:user.uid,...userData};
         setupPresence(user);
@@ -274,6 +277,7 @@
           currentUser.cash=d.cash||0;
           currentUser.isAdmin=d.isAdmin||false;
 
+          // Reset daily stars if date changed
           const now = Date.now();
           const lastReset = d.lastStarReset || 0;
           if(new Date(lastReset).toDateString() !== new Date(now).toDateString()){
@@ -286,6 +290,7 @@
           updateAdminPanel(currentUser);
         });
 
+        // Auto star increment every 10s up to daily cap
         setInterval(async()=>{
           if(!currentUser || !autoStarEnabled) return;
           if(currentUser.stars < dailyStarCap){
@@ -295,6 +300,7 @@
           }
         },10000);
 
+        // MESSAGES LISTENER
         const q=collection(db,"messages");
         onSnapshot(q,snap=>{
           const messagesDiv=document.getElementById("messages");
@@ -306,37 +312,60 @@
               if(m.uid===currentUser.uid) div.classList.add("me");
               const color=getColorForUser(m.chatId||"Guest");
 
-              // ---------------- MENTION PARSING ----------------
               let innerContent = '';
-              const mentionRegex = /@([a-zA-Z0-9_]+)/g;
-              let mentioned = false;
-
               innerContent = `<span class="meta" style="color:${color}">${m.chatId||"Guest"}:</span> 
-                              <span class="content">${m.content.replace(mentionRegex,(match,p1)=>{
-                                if(currentUser.chatId && p1.toLowerCase()===currentUser.chatId.toLowerCase()){
-                                  mentioned = true;
-                                  return `<span class="mentioned">@${p1}</span>`;
-                                } else { return `@${p1}`; }
-                              })}</span>`;
+                              <span class="content">${m.content}</span>`;
 
               div.innerHTML = innerContent + `
-                <span class="heart-btn">${m.likes>0?'♥':'♡'}
+                <span class="heart-btn">${m.likes > 0 ? '♥' : '♡'} 
                   <span class="like-count" style="display:${m.likes>0?'inline':'none'}">${m.likes||0}</span>
                 </span>`;
 
-              if(mentioned){
-                const tone = document.getElementById("mentionTone");
-                tone.currentTime=0;
-                tone.play().catch(()=>{});
-              }
+              const heartBtn = div.querySelector('.heart-btn');
+              heartBtn.addEventListener('click', async () => {
+                const liked = heartBtn.textContent.includes('♡');
+                let newCount = liked ? (m.likes || 0) + 1 : (m.likes || 0) - 1;
+                heartBtn.innerHTML = (liked ? '♥' : '♡') + ` <span class="like-count" style="display:${newCount>0?'inline':'none'}">${newCount}</span>`;
+                m.likes = newCount;
+                const msgRef = doc(db, 'messages', change.doc.id);
+                updateDoc(msgRef, { likes: newCount }).catch(console.error);
+              });
+
               messagesDiv.appendChild(div);
               messagesDiv.scrollTop=messagesDiv.scrollHeight;
             }
           });
         });
 
-      }else{document.getElementById("authBox").style.display="flex";}
+        showChatIdPromptIfNeeded(user);
+
+      } else {
+        currentUser=null;
+        document.getElementById("authBox").style.display="block";
+        document.getElementById("sendArea").style.display="none";
+        document.getElementById("profileBox").style.display="none";
+        document.getElementById("adminPanel").style.display="none";
+      }
     });
+
+    // ---------------- REDEEM ----------------
+    document.getElementById("redeemBtn").addEventListener("click",()=>{
+      alert("Redeem functionality not yet implemented.");
+    });
+
+    // ---------------- ADMIN BUTTONS ----------------
+    document.getElementById("adminLogoutBtn").addEventListener("click",()=>{signOut(auth);});
+    document.getElementById("toggleAutoStar").addEventListener("click",()=>{autoStarEnabled=!autoStarEnabled; alert("Auto-Star "+(autoStarEnabled?"Enabled":"Disabled"));});
+    document.getElementById("giveStarAdmin").addEventListener("click",()=>{alert("⭐ Gift Stars action placeholder");});
+    document.getElementById("giveCashAdmin").addEventListener("click",()=>{alert("💸 Gift Cash action placeholder");});
+    document.getElementById("kickUser").addEventListener("click",()=>{alert("❌ Kick User placeholder");});
+    document.getElementById("setTimeoutAdmin").addEventListener("click",()=>{alert("⏱ Set Chat Timeout placeholder");});
+    document.getElementById("deleteAllAdmin").addEventListener("click",()=>{alert("🗑 Delete All Messages placeholder");});
+    document.getElementById("broadcastMsg").addEventListener("click",()=>{alert("📢 Broadcast Message placeholder");});
+    document.getElementById("globalStars").addEventListener("click",()=>{alert("🌟 Gift Stars Bonus placeholder");});
+    document.getElementById("globalCash").addEventListener("click",()=>{alert("💰 Gift Cash Bonus placeholder");});
+    document.getElementById("viewActiveUsers").addEventListener("click",()=>{alert("👥 Online users placeholder");});
+
   </script>
 </body>
 </html>
